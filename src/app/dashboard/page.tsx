@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface SiteItem {
   id: string;
@@ -18,6 +19,8 @@ interface SiteItem {
 export default function DashboardPage() {
   const [sites, setSites] = useState<SiteItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activating, setActivating] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetch("/api/sites")
@@ -35,6 +38,35 @@ export default function DashboardPage() {
     const res = await fetch(`/api/sites?siteId=${siteId}`, { method: "DELETE" });
     if (res.ok) {
       setSites(sites.filter((s) => s.id !== siteId));
+    }
+  };
+
+  const handleActivate = async (site: SiteItem) => {
+    setActivating(site.id);
+    try {
+      const res = await fetch("/api/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId: site.id }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Siteyi aktif olarak güncelle
+        setSites(sites.map((s) =>
+          s.id === site.id ? { ...s, status: "active" } : s
+        ));
+        alert("Site canlıya alındı! ✅");
+      } else if (data.needsPayment) {
+        // Ödeme sayfasına yönlendir
+        router.push(`/checkout?siteId=${site.id}&name=${encodeURIComponent(site.recipient_name + "'e Özel")}`);
+      } else {
+        alert(data.message || data.error || "Bir hata oluştu");
+      }
+    } catch {
+      alert("Bir hata oluştu");
+    } finally {
+      setActivating(null);
     }
   };
 
@@ -134,21 +166,42 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Link
                     href={`/dashboard/editor/${site.id}`}
                     className="flex-1 text-center bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
                   >
                     Düzenle
                   </Link>
-                  {(site.status === "active" || site.status === "draft") && (
+                  {site.status === "active" ? (
                     <Link
                       href={`/${site.slug}`}
                       target="_blank"
                       className="flex-1 text-center bg-purple-100 text-purple-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors"
                     >
-                      Görüntüle
+                      Siteyi Aç
                     </Link>
+                  ) : (
+                    <Link
+                      href={`/dashboard/preview/${site.id}`}
+                      className="flex-1 text-center bg-purple-100 text-purple-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors"
+                    >
+                      Önizle
+                    </Link>
+                  )}
+                  {site.status !== "active" && (
+                    <button
+                      onClick={() => handleActivate(site)}
+                      disabled={activating === site.id}
+                      className="flex-1 text-center bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors disabled:opacity-50"
+                    >
+                      {activating === site.id ? "⏳" : "🚀 Yayınla"}
+                    </button>
+                  )}
+                  {site.status === "active" && (
+                    <span className="flex-1 text-center bg-green-50 text-green-600 px-3 py-2 rounded-lg text-sm font-medium">
+                      ✅ Yayında
+                    </span>
                   )}
                   <button
                     onClick={() => handleDelete(site.id)}

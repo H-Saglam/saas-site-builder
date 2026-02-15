@@ -53,12 +53,17 @@ export async function POST(request: NextRequest) {
     const supabase = getServiceSupabase();
 
     // Siteyi bul
-    const { data: site } = await supabase
+    const query = supabase
       .from("sites")
       .select("password_hash, is_private")
-      .eq("slug", slug)
-      .eq("status", "active")
-      .single();
+      .eq("slug", slug);
+
+    // Production'da sadece aktif siteleri kontrol et
+    if (process.env.NODE_ENV !== "development") {
+      query.eq("status", "active");
+    }
+
+    const { data: site } = await query.single();
 
     if (!site || !site.is_private || !site.password_hash) {
       return NextResponse.json(

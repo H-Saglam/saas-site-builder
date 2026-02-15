@@ -94,14 +94,7 @@ export async function POST(request: NextRequest) {
       order: index + 1,
     }));
 
-    // Development modda otomatik aktif et
-    const isDev = process.env.NODE_ENV === "development";
-    const initialStatus = isDev ? "active" : "draft";
-    const expiresAt = isDev
-      ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-      : null;
-
-    // Siteyi kaydet
+    // Siteyi kaydet — her zaman taslak olarak başlar
     const { data: site, error } = await supabase
       .from("sites")
       .insert({
@@ -111,11 +104,10 @@ export async function POST(request: NextRequest) {
         recipient_name: recipientName,
         slides: orderedSlides,
         music_id: musicId || null,
-        status: initialStatus,
+        status: "draft",
         package_type: "standard",
         is_private: isPrivate,
         password_hash: passwordHash,
-        expires_at: expiresAt,
       })
       .select()
       .single();

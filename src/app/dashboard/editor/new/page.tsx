@@ -595,58 +595,111 @@ export default function EditorPage() {
           <div>
             <h2 className="text-xl font-bold text-gray-800 mb-6">Önizleme & Kaydet</h2>
 
-            <div className="bg-gray-50 rounded-lg p-6 mb-6">
-              <h3 className="font-semibold text-gray-800 mb-4">Özet</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Başlık:</span>
-                  <span className="text-gray-800 font-medium">{title || "-"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Alıcı:</span>
-                  <span className="text-gray-800 font-medium">{recipientName || "-"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">URL:</span>
-                  <span className="text-gray-800 font-medium">/{slug || "-"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Slide Sayısı:</span>
-                  <span className="text-gray-800 font-medium">{slides.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Şifre Koruması:</span>
-                  <span className="text-gray-800 font-medium">{isPrivate ? "Var 🔒" : "Yok"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Müzik:</span>
-                  <span className="text-gray-800 font-medium">
-                    {musicTracks.find((t) => t.id === musicId)?.title || "Seçilmedi"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Slide önizlemeleri */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
+            {/* Her slayt ayrı ayrı önizleme */}
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
               {slides.map((slide, i) => (
-                <div
-                  key={i}
-                  className="aspect-[9/16] rounded-lg overflow-hidden flex items-center justify-center text-white text-xs text-center p-2"
-                  style={{
-                    background: `linear-gradient(135deg, ${slide.gradient.from}, ${slide.gradient.to})`,
-                  }}
-                >
-                  <div>
-                    <div className="font-semibold">{i + 1}</div>
-                    <div className="opacity-70 capitalize">{slide.type}</div>
+                <div key={i} className="flex-shrink-0 snap-center">
+                  <div className="text-xs text-gray-500 text-center mb-1 font-medium">
+                    {i + 1}/{slides.length} — {slide.type === "cover" ? "Kapak" : slide.type === "photo" ? "Fotoğraf" : slide.type === "collage" ? "Kolaj" : slide.type === "text" ? "Metin" : "Final"}
+                  </div>
+                  <div
+                    className="w-[240px] aspect-[9/16] rounded-2xl overflow-hidden shadow-lg border-2 border-gray-700 flex flex-col items-center justify-center text-white text-center p-4 relative"
+                    style={{
+                      background: `linear-gradient(135deg, ${slide.gradient.from}, ${slide.gradient.to})`,
+                    }}
+                  >
+                    {/* Cover Slide */}
+                    {slide.type === "cover" && (
+                      <div className="flex flex-col items-center gap-3">
+                        <h3 className="text-2xl font-bold drop-shadow-md">{recipientName || "İsim"}...</h3>
+                        <p className="text-sm opacity-80">{slide.heading || "Alt başlık"}</p>
+                        <div className="mt-4 text-xs opacity-60">Başlamak için dokun ❤️</div>
+                      </div>
+                    )}
+
+                    {/* Photo Slide */}
+                    {slide.type === "photo" && (
+                      <div className="flex flex-col items-center gap-2 w-full">
+                        {slide.imageUrl ? (
+                          <div className="w-[70%] aspect-square rounded-lg overflow-hidden shadow-md border-2 border-white/30 rotate-[-2deg]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={slide.imageUrl} alt={slide.heading} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-[70%] aspect-square rounded-lg bg-white/20 flex items-center justify-center text-3xl">📷</div>
+                        )}
+                        <h3 className="text-lg font-bold mt-1 drop-shadow-md">{slide.heading || "Başlık"}</h3>
+                        {slide.description && <p className="text-xs opacity-80 line-clamp-2">{slide.description}</p>}
+                      </div>
+                    )}
+
+                    {/* Collage Slide */}
+                    {slide.type === "collage" && (
+                      <div className="flex flex-col items-center gap-2 w-full">
+                        <div className="flex gap-1 w-[85%]">
+                          {[0, 1, 2].map((idx) => (
+                            <div key={idx} className="flex-1 aspect-square rounded overflow-hidden border border-white/30">
+                              {slide.collageUrls[idx] ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={slide.collageUrls[idx]} alt={`Kolaj ${idx + 1}`} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-white/20 flex items-center justify-center text-lg">📷</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <h3 className="text-lg font-bold mt-1 drop-shadow-md">{slide.heading || "Başlık"}</h3>
+                        {slide.description && <p className="text-xs opacity-80 line-clamp-2">{slide.description}</p>}
+                      </div>
+                    )}
+
+                    {/* Text Slide */}
+                    {slide.type === "text" && (
+                      <div className="flex flex-col items-center gap-3 px-2">
+                        <h3 className="text-xl font-bold drop-shadow-md">{slide.heading || "Başlık"}</h3>
+                        {slide.description && <p className="text-sm opacity-80 leading-relaxed line-clamp-4">{slide.description}</p>}
+                      </div>
+                    )}
+
+                    {/* Finale Slide */}
+                    {slide.type === "finale" && (
+                      <div className="flex flex-col items-center gap-2">
+                        {slide.imageUrl ? (
+                          <div className="w-[60%] aspect-square rounded-lg overflow-hidden shadow-md border-2 border-white/30">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={slide.imageUrl} alt="Final" className="w-full h-full object-cover" />
+                            {slide.handPointerText && (
+                              <div className="text-xs mt-1 opacity-70">👆 {slide.handPointerText}</div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="w-[60%] aspect-square rounded-lg bg-white/20 flex items-center justify-center text-3xl">🎉</div>
+                        )}
+                        <h3 className="text-xl font-bold mt-1 drop-shadow-md">{slide.heading || "Son"}</h3>
+                        {slide.description && <p className="text-xs opacity-80 line-clamp-2">{slide.description}</p>}
+                        <div className="mt-2 px-3 py-1 bg-white/20 rounded-full text-xs">Başa Dön ↺</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
 
+            {/* Özet bilgi */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-4 mt-4">
+              <h3 className="font-semibold text-gray-800 mb-3 text-sm">Özet</h3>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div><span className="text-gray-500">Başlık:</span> <span className="font-medium">{title || "-"}</span></div>
+                <div><span className="text-gray-500">Alıcı:</span> <span className="font-medium">{recipientName || "-"}</span></div>
+                <div><span className="text-gray-500">URL:</span> <span className="font-medium">/{slug || "-"}</span></div>
+                <div><span className="text-gray-500">Slide:</span> <span className="font-medium">{slides.length} adet</span></div>
+                <div><span className="text-gray-500">Şifre:</span> <span className="font-medium">{isPrivate ? "Var 🔒" : "Yok"}</span></div>
+                <div><span className="text-gray-500">Müzik:</span> <span className="font-medium">{musicTracks.find((t) => t.id === musicId)?.title || "Seçilmedi"}</span></div>
+              </div>
+            </div>
+
             <p className="text-xs text-gray-400 mb-4">
-              ℹ️ Site &quot;Taslak&quot; olarak kaydedilecek. Ödeme sonrası aktif hale gelecektir.
+              ℹ️ Site &quot;Taslak&quot; olarak kaydedilecek. Dashboard&apos;dan Yayınla butonuyla canlıya alabilirsiniz.
             </p>
           </div>
         )}
