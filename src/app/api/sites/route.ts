@@ -141,15 +141,27 @@ export async function PUT(request: NextRequest) {
 
     const supabase = getServiceSupabase();
 
-    // Sahiplik kontrolü
+    // Sahiplik kontrolü ve düzenleme süresi kontrolü (1 hafta)
     const { data: existing } = await supabase
       .from("sites")
-      .select("user_id")
+      .select("user_id, created_at")
       .eq("id", siteId)
       .single();
 
     if (!existing || existing.user_id !== userId) {
       return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
+    }
+
+    // 1 hafta (7 gün) düzenleme süresi sınırı
+    const createdAt = new Date(existing.created_at);
+    const now = new Date();
+    const daysSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+    
+    if (daysSinceCreation > 7) {
+      return NextResponse.json(
+        { error: "Düzenleme süresi doldu. Site oluşturulduktan sonra sadece 1 hafta içinde düzenlenebilir." },
+        { status: 403 }
+      );
     }
 
     // Eğer şifre güncelleniyorsa hash'le

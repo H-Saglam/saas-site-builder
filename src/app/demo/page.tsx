@@ -50,10 +50,19 @@ const DEMO_SLIDES: SlideData[] = [
 
 export default function DemoPage() {
   return (
-    <TemplateView
-      recipientName="Demo"
-      slides={DEMO_SLIDES}
-      musicTrack={null}
-    />
+    <div className="relative">
+      {/* Anasayfa butonu */}
+      <a
+        href="/"
+        className="fixed top-4 left-4 z-[200] bg-white/90 backdrop-blur-sm text-gray-800 px-4 py-2 rounded-lg shadow-lg hover:bg-white transition-all text-sm font-semibold border border-gray-200"
+      >
+        ← Anasayfa
+      </a>
+      <TemplateView
+        recipientName="Demo"
+        slides={DEMO_SLIDES}
+        musicTrack={null}
+      />
+    </div>
   );
 }

@@ -51,6 +51,8 @@ export default function EditSitePage() {
   const [saving, setSaving] = useState(false);
   const [site, setSite] = useState<SiteData | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [editExpired, setEditExpired] = useState(false);
+  const [daysRemaining, setDaysRemaining] = useState<number>(0);
 
   // --- form state ---
   const [slug, setSlug] = useState("");
@@ -88,6 +90,16 @@ export default function EditSitePage() {
           })) as SlideFormData[]
         );
         setSelectedMusicId(s.musicId ?? null);
+
+        // Düzenleme süresi kontrolü (1 hafta)
+        if (raw.created_at) {
+          const createdAt = new Date(raw.created_at);
+          const now = new Date();
+          const daysSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+          const remaining = Math.max(0, 7 - daysSinceCreation);
+          setDaysRemaining(Math.ceil(remaining));
+          setEditExpired(daysSinceCreation > 7);
+        }
       } catch {
         alert("Site yüklenirken hata oluştu.");
         router.push("/dashboard");
@@ -246,14 +258,32 @@ export default function EditSitePage() {
           <button onClick={() => setShowPreview(true)} className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200">
             <Eye className="h-4 w-4" /> Önizleme
           </button>
-          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-pink-600 text-white px-6 py-2 rounded-lg hover:bg-pink-700 disabled:opacity-50">
+          <button onClick={handleSave} disabled={saving || editExpired} className="flex items-center gap-2 bg-pink-600 text-white px-6 py-2 rounded-lg hover:bg-pink-700 disabled:opacity-50">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Kaydet
+            {editExpired ? "Düzenleme Süresi Doldu" : "Kaydet"}
           </button>
         </div>
       </div>
 
       <h1 className="text-2xl font-bold mb-6">Siteyi Düzenle</h1>
+
+      {/* Düzenleme süresi uyarısı */}
+      {editExpired && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
+          <p className="font-semibold">⚠️ Düzenleme süresi doldu</p>
+          <p className="text-sm mt-1">
+            Site oluşturulduktan sonra sadece 1 hafta içinde düzenlenebilir. Artık bu siteyi güncelleyemezsiniz.
+          </p>
+        </div>
+      )}
+      {!editExpired && daysRemaining <= 3 && daysRemaining > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-6">
+          <p className="font-semibold">⏰ Düzenleme süreniz yakında doluyor</p>
+          <p className="text-sm mt-1">
+            Bu siteyi düzenleyebilmeniz için {daysRemaining} gün kaldı. Değişiklikleri en kısa sürede kaydetmeyi unutmayın.
+          </p>
+        </div>
+      )}
 
       {/* Genel Bilgiler */}
       <section className="bg-white rounded-xl border p-6 mb-6">

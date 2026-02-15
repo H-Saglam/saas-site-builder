@@ -50,28 +50,22 @@ CREATE INDEX IF NOT EXISTS idx_music_category ON music_library(category);
 -- ============================================
 -- RLS (Row Level Security) Politikaları
 -- ============================================
+-- NOT: Tüm yazma işlemleri (INSERT/UPDATE/DELETE) sunucu tarafında
+-- Service Role Key ile yapılır (RLS'i bypass eder).
+-- Bu yüzden client (anon key) tarafında yazma izni VERİLMEZ.
+-- Sadece SELECT için public erişim açıktır (public site görüntüleme + müzik listeleme).
 
 -- Sites tablosu için RLS aktif et
 ALTER TABLE sites ENABLE ROW LEVEL SECURITY;
 
--- Herkes okuyabilir (public siteler)
+-- Herkes okuyabilir (public siteler için gerekli)
 CREATE POLICY "Sites are viewable by everyone" ON sites
   FOR SELECT USING (true);
 
--- Sadece sahibi insert edebilir
-CREATE POLICY "Users can insert their own sites" ON sites
-  FOR INSERT WITH CHECK (true);
-  -- Not: Clerk JWT kullanıldığı için auth.uid() yerine API seviyesinde kontrol yapıyoruz
+-- INSERT/UPDATE/DELETE -> Anon key ile YASAKLI
+-- (Service Role key RLS'i otomatik bypass eder, ek policy gerekmez)
 
--- Sadece sahibi update edebilir
-CREATE POLICY "Users can update their own sites" ON sites
-  FOR UPDATE USING (true);
-
--- Sadece sahibi silebilir
-CREATE POLICY "Users can delete their own sites" ON sites
-  FOR DELETE USING (true);
-
--- Müzik kütüphanesi - herkes okuyabilir
+-- Müzik kütüphanesi - herkes okuyabilir (sadece SELECT)
 ALTER TABLE music_library ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Music is viewable by everyone" ON music_library
