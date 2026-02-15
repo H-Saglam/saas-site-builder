@@ -1,0 +1,573 @@
+/* ============================================
+   Template View Styles
+   Tüm stiller .template-container altında scope'lanmıştır
+   böylece dashboard ve diğer sayfalarla çakışmaz
+   ============================================ */
+
+/* Progress Bar Container */
+.template-container .progress-container {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  padding: 0 10px;
+  z-index: 100;
+  gap: 5px;
+}
+
+.template-container .progress-bar-wrapper {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.template-container .progress-bar {
+  height: 100%;
+  background: white;
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+.template-container .progress-bar.completed {
+  width: 100%;
+}
+
+/* Main Slides Container */
+.template-container .slides-container {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
+.template-container {
+  font-family: "Outfit", sans-serif;
+  color: white;
+  background-color: #000;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+.template-container .slide {
+  height: 100vh;
+  width: 100vw;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.8s ease-in-out, visibility 0.8s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.template-container .slide.active {
+  opacity: 1;
+  visibility: visible;
+  z-index: 10;
+}
+
+/* Content Styling */
+.template-container h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.template-container h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 1rem 0;
+}
+
+.template-container p {
+  font-size: 1.2rem;
+  font-weight: 300;
+  max-width: 80%;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.template-container .tap-hint {
+  margin-top: 2rem;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  animation: template-pulse 2s infinite;
+}
+
+.template-container .navigation-hint {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  font-size: 0.8rem;
+  opacity: 0.5;
+  z-index: 99;
+  pointer-events: none;
+}
+
+/* Song Badge (Spotify Style) */
+.template-container .song-badge {
+  position: absolute;
+  top: 30px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 8px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
+  z-index: 20;
+}
+
+.template-container .equalizer {
+  display: flex;
+  gap: 3px;
+  margin-right: 10px;
+  height: 15px;
+  align-items: flex-end;
+}
+
+.template-container .equalizer span {
+  width: 3px;
+  background: #1db954;
+  animation: template-equalizer 1s infinite ease-in-out;
+}
+
+.template-container .equalizer span:nth-child(1) {
+  height: 6px;
+  animation-duration: 0.8s;
+}
+
+.template-container .equalizer span:nth-child(2) {
+  height: 12px;
+  animation-duration: 1.1s;
+}
+
+.template-container .equalizer span:nth-child(3) {
+  height: 8px;
+  animation-duration: 0.9s;
+}
+
+.template-container .song-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.template-container .song-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.template-container .artist {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+/* Images & Frames */
+.template-container .photo-frame {
+  width: 85vw;
+  max-width: 400px;
+  aspect-ratio: 1/1;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  margin: 0 auto 20px auto;
+  position: relative;
+  background: #000;
+}
+
+.template-container .photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Collage */
+.template-container .content .collage {
+  position: relative;
+  width: 85vw;
+  max-width: 400px;
+  height: 400px;
+  margin: 0 auto 20px auto;
+}
+
+.template-container .c-img {
+  position: absolute;
+  width: 60%;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 3px solid white;
+}
+
+.template-container .c-1 {
+  top: 0;
+  left: 0;
+  transform: rotate(-10deg);
+  z-index: 1;
+}
+
+.template-container .c-2 {
+  top: 10%;
+  right: 0;
+  transform: rotate(10deg);
+  z-index: 2;
+}
+
+.template-container .c-3 {
+  bottom: 0;
+  left: 20%;
+  transform: rotate(-5deg);
+  z-index: 3;
+}
+
+/* Animations */
+@keyframes template-equalizer {
+  0%,
+  100% {
+    height: 5px;
+  }
+  50% {
+    height: 15px;
+  }
+}
+
+@keyframes template-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+}
+
+@keyframes template-hand-bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-10px);
+  }
+}
+
+/* Entry Animations */
+.template-container .animate-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease-out;
+}
+
+.template-container .slide.active .animate-up {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.template-container .animate-pop {
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.template-container .slide.active .animate-pop {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.template-container .rotate-left {
+  transform: rotate(-3deg) !important;
+}
+
+.template-container .slide.active .rotate-left {
+  transform: rotate(-3deg) scale(1) !important;
+}
+
+/* Delays */
+.template-container .delay-1 {
+  transition-delay: 0.3s;
+}
+
+.template-container .delay-2 {
+  transition-delay: 0.6s;
+}
+
+.template-container .delay-3 {
+  transition-delay: 0.9s;
+}
+
+/* Finale Slide Special Features */
+.template-container .hand-pointer {
+  position: absolute;
+  bottom: 20%;
+  right: 10%;
+  background: white;
+  color: black;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  animation: template-hand-bounce 1s infinite alternate;
+  z-index: 10;
+}
+
+.template-container .hand-pointer::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  right: 20px;
+  border-width: 8px 8px 0;
+  border-style: solid;
+  border-color: white transparent transparent transparent;
+}
+
+.template-container .replay-btn {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: white;
+  color: #e64a19;
+  border: none;
+  border-radius: 30px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.template-container .replay-btn:active {
+  transform: scale(0.95);
+}
+
+.template-container .confetti-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* Finale slide specifics */
+.template-container .slide-finale h1 {
+  font-size: 2rem;
+  word-wrap: break-word;
+  max-width: 95%;
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+
+.template-container .slide-finale p {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+.template-container .slide-finale .photo-frame {
+  margin-bottom: 10px;
+  width: 75vw;
+  max-width: 300px;
+}
+
+.template-container .slide-finale .replay-btn {
+  margin-top: 5px;
+  margin-bottom: 40px;
+}
+
+/* Text-only slide */
+.template-container .slide-text .text-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.template-container .slide-text h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.template-container .slide-text p {
+  font-size: 1.4rem;
+  line-height: 1.8;
+}
+
+/* Password Gate */
+.password-gate {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-family: "Outfit", sans-serif;
+  color: white;
+  padding: 20px;
+}
+
+.password-gate .lock-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.password-gate h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.password-gate .subtitle {
+  font-size: 1rem;
+  opacity: 0.7;
+  margin-bottom: 2rem;
+}
+
+.password-gate .password-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.password-gate .password-input {
+  width: 100%;
+  padding: 14px 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 1rem;
+  font-family: "Outfit", sans-serif;
+  text-align: center;
+  outline: none;
+  backdrop-filter: blur(5px);
+  transition: border-color 0.3s;
+}
+
+.password-gate .password-input:focus {
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.password-gate .password-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.password-gate .submit-btn {
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  background: white;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: "Outfit", sans-serif;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.password-gate .submit-btn:active {
+  transform: scale(0.97);
+}
+
+.password-gate .submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.password-gate .error-message {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+  min-height: 1.2em;
+}
+
+.password-gate .branding {
+  position: absolute;
+  bottom: 20px;
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+
+.password-gate .branding a {
+  color: white;
+  text-decoration: none;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.password-gate .shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* ============================================
+   Mobile Tweaks
+   ============================================ */
+@media (max-width: 600px) {
+  .template-container h1 {
+    font-size: 2.2rem;
+  }
+
+  .template-container h2 {
+    font-size: 1.6rem;
+  }
+
+  .template-container p {
+    font-size: 1rem;
+  }
+
+  .template-container .photo-frame {
+    width: 90vw;
+  }
+
+  .template-container .slide-finale h1 {
+    font-size: 1.6rem;
+  }
+
+  .template-container .slide-finale .hand-pointer {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+    right: 0;
+  }
+
+  .template-container .content .collage {
+    height: 300px;
+    width: 80vw;
+    margin-bottom: 10px;
+  }
+
+  .template-container .c-img {
+    width: 55%;
+  }
+
+  .template-container .slide-text h2 {
+    font-size: 1.8rem;
+  }
+
+  .template-container .slide-text p {
+    font-size: 1.1rem;
+  }
+}
