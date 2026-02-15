@@ -250,7 +250,7 @@ export default function EditorPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Site URL&apos;si</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500 whitespace-nowrap">lovesite.com/</span>
+                  <span className="text-sm text-gray-500 whitespace-nowrap">ozelbirani.com/</span>
                   <input
                     type="text"
                     value={slug}

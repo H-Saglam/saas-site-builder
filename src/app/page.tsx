@@ -5,7 +5,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-pink-500 via-purple-600 to-indigo-700 font-[var(--font-outfit)]">
       {/* Navigation */}
       <nav className="flex items-center justify-between px-6 py-4 md:px-12">
-        <div className="text-2xl font-bold text-white">💝 LoveSite</div>
+        <div className="text-2xl font-bold text-white">💝 Özel Bir Anı</div>
         <div className="flex items-center gap-4">
           <Link
             href="/sign-in"
@@ -170,7 +170,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-white/10 py-8 px-6 text-center text-white/40 text-sm">
-        <p>&copy; 2026 LoveSite. Tüm hakları saklıdır.</p>
+        <p>&copy; 2026 Özel Bir Anı. Tüm hakları saklıdır.</p>
       </footer>
     </div>
   );

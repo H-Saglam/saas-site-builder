@@ -73,7 +73,7 @@ export default function PasswordGate({ gradient, slug, onVerified }: PasswordGat
       </form>
 
       <div className="branding">
-        <a href="/">💝 LoveSite ile oluşturuldu</a>
+        <a href="/">💝 Özel Bir Anı ile oluşturuldu</a>
       </div>
     </div>
   );

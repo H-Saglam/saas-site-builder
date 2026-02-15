@@ -10,9 +10,10 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "LoveSite — Sevdiklerinize Özel Dijital Hikayeler",
+  title: "Özel Bir Anı — Sevdiklerinize Özel Dijital Hikayeler",
   description:
     "Sevdikleriniz için kişiselleştirilmiş, müzikli, animasyonlu dijital hikaye siteleri oluşturun.",
+  metadataBase: new URL("https://ozelbirani.com"),
 };
 
 export default function RootLayout({

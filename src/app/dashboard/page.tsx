@@ -16,10 +16,34 @@ interface SiteItem {
   slides: { gradient?: { from: string; to: string } }[];
 }
 
+// Geri sayım hesaplama fonksiyonu
+function getTimeRemaining(createdAt: string, durationDays: number) {
+  const created = new Date(createdAt);
+  const now = new Date();
+  const expiresAt = new Date(created.getTime() + durationDays * 24 * 60 * 60 * 1000);
+  const diff = expiresAt.getTime() - now.getTime();
+
+  if (diff <= 0) {
+    return { expired: true, text: "Süresi doldu", days: 0, hours: 0 };
+  }
+
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  
+  if (days > 30) {
+    return { expired: false, text: `${days} gün`, days, hours };
+  } else if (days > 0) {
+    return { expired: false, text: `${days} gün ${hours} saat`, days, hours };
+  } else {
+    return { expired: false, text: `${hours} saat`, days, hours };
+  }
+}
+
 export default function DashboardPage() {
   const [sites, setSites] = useState<SiteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
   const router = useRouter();
 
   useEffect(() => {
@@ -30,6 +54,14 @@ export default function DashboardPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  }, []);
+
+  // Her 1 dakikada bir güncelle (geri sayım için)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 60000); // 60 saniye
+    return () => clearInterval(interval);
   }, []);
 
   const handleDelete = async (siteId: string) => {
@@ -124,6 +156,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sites.map((site) => {
           const gradient = site.slides?.[0]?.gradient;
+          // currentTime kullanarak geri sayımı güncelle
+          const editRemaining = getTimeRemaining(site.created_at, 7);
+          const liveRemaining = getTimeRemaining(site.created_at, 365);
+          void currentTime; // Re-render trigger için kullanılıyor
+          
           return (
             <div
               key={site.id}
@@ -158,6 +195,23 @@ export default function DashboardPage() {
                   <span className="text-xs text-gray-400">
                     {site.package_type === "premium" ? "⭐ Premium" : "Standart"}
                   </span>
+                </div>
+
+                {/* Geri Sayımlar */}
+                <div className="mb-3 space-y-1.5">
+                  {/* Düzenleme Süresi */}
+                  <div className={`text-xs flex items-center justify-between ${editRemaining.expired ? "text-red-500" : editRemaining.days <= 2 ? "text-orange-500" : "text-gray-500"}`}>
+                    <span>✏️ Düzenleme:</span>
+                    <span className="font-medium">{editRemaining.text}</span>
+                  </div>
+                  
+                  {/* Canlı Kalma Süresi - Sadece aktif siteler için */}
+                  {site.status === "active" && (
+                    <div className={`text-xs flex items-center justify-between ${liveRemaining.expired ? "text-red-500" : liveRemaining.days <= 30 ? "text-orange-500" : "text-gray-500"}`}>
+                      <span>🌐 Canlıda:</span>
+                      <span className="font-medium">{liveRemaining.text}</span>
+                    </div>
+                  )}
                 </div>
 
                 {site.status === "active" && (
