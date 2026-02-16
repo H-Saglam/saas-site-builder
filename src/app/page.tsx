@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TEMPLATES } from "@/lib/templates";
 
 export default function Home() {
   return (
@@ -43,12 +44,6 @@ export default function Home() {
           >
             Ücretsiz Dene ✨
           </Link>
-          <Link
-            href="/demo"
-            className="border border-zinc-700 text-zinc-300 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-zinc-800/50 transition-all"
-          >
-            Demo Gör 👀
-          </Link>
         </div>
       </section>
 
@@ -91,6 +86,70 @@ export default function Home() {
                 {item.title}
               </h3>
               <p className="text-zinc-500 text-sm leading-relaxed">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Templates Showcase */}
+      <section className="py-24 px-6 border-t border-zinc-800/50">
+        <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4 tracking-tight">
+          Şablonlarımız
+        </h2>
+        <p className="text-zinc-500 text-center mb-16 max-w-lg mx-auto">
+          Farklı anlar için tasarlanmış şablonlar. Birini seçin, kişiselleştirin ve paylaşın.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
+          {TEMPLATES.map((tpl) => (
+            <div
+              key={tpl.id}
+              className={`group relative rounded-2xl overflow-hidden border transition-all duration-300 ${tpl.isAvailable
+                ? "border-zinc-800 hover:border-zinc-600 hover:shadow-xl hover:-translate-y-1"
+                : "border-zinc-800/50 opacity-60"
+                }`}
+            >
+              {/* Gradient Preview */}
+              <div
+                className="h-36 flex items-center justify-center relative"
+                style={{
+                  background: `linear-gradient(135deg, ${tpl.gradient.from}, ${tpl.gradient.to})`,
+                }}
+              >
+                <span className="text-5xl drop-shadow-lg">{tpl.emoji}</span>
+
+                {!tpl.isAvailable && (
+                  <div className="absolute top-3 right-3 bg-zinc-900/80 backdrop-blur-sm text-zinc-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                    Yakında
+                  </div>
+                )}
+
+                {tpl.isAvailable && (
+                  <div className="absolute top-3 right-3 bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                    Hazır
+                  </div>
+                )}
+              </div>
+
+              {/* Info */}
+              <div className="p-5 bg-zinc-900">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="font-semibold text-white text-sm">{tpl.name}</h3>
+                  <span className="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">
+                    {tpl.category}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">
+                  {tpl.description}
+                </p>
+                {tpl.isAvailable && (
+                  <Link
+                    href="/demo"
+                    className="mt-4 block text-center bg-white/10 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-white/20 transition-colors"
+                  >
+                    Demo Gör 👀
+                  </Link>
+                )}
+              </div>
             </div>
           ))}
         </div>
