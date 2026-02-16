@@ -29,7 +29,7 @@ function getTimeRemaining(createdAt: string, durationDays: number) {
 
   const days = Math.floor(diff / (24 * 60 * 60 * 1000));
   const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-  
+
   if (days > 30) {
     return { expired: false, text: `${days} gün`, days, hours };
   } else if (days > 0) {
@@ -140,12 +140,12 @@ export default function DashboardPage() {
         <p className="text-gray-500 mb-8">
           İlk dijital hikaye sitenizi oluşturmaya başlayın!
         </p>
-        <Link
-          href="/dashboard/editor/new"
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("open-template-picker"))}
           className="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors inline-block"
         >
           İlk Siteni Oluştur ✨
-        </Link>
+        </button>
       </div>
     );
   }
@@ -160,7 +160,7 @@ export default function DashboardPage() {
           const editRemaining = getTimeRemaining(site.created_at, 7);
           const liveRemaining = getTimeRemaining(site.created_at, 365);
           void currentTime; // Re-render trigger için kullanılıyor
-          
+
           return (
             <div
               key={site.id}
@@ -204,7 +204,7 @@ export default function DashboardPage() {
                     <span>✏️ Düzenleme:</span>
                     <span className="font-medium">{editRemaining.text}</span>
                   </div>
-                  
+
                   {/* Canlı Kalma Süresi - Sadece aktif siteler için */}
                   {site.status === "active" && (
                     <div className={`text-xs flex items-center justify-between ${liveRemaining.expired ? "text-red-500" : liveRemaining.days <= 30 ? "text-orange-500" : "text-gray-500"}`}>
