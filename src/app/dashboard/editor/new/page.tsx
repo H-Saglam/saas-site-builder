@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { SlideType, SlideGradient, MusicTrack } from "@/lib/types";
 import { GRADIENT_PRESETS, MUSIC_CATEGORIES } from "@/lib/types";
+import TemplateView from "@/components/template/TemplateView";
 
 // ============================================
 // Types
@@ -36,6 +37,7 @@ export default function EditorPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -190,21 +192,52 @@ export default function EditorPage() {
 
   const totalSteps = 5;
 
+  // --- preview data ---
+  const previewSlides = slides.map((s, i) => ({
+    order: i + 1,
+    type: s.type,
+    heading: s.type === "cover" ? recipientName : s.heading,
+    description: s.description,
+    gradient: s.gradient,
+    imageUrl: s.imageUrl || undefined,
+    collageUrls: s.type === "collage" ? s.collageUrls : undefined,
+    handPointerText: s.type === "finale" ? s.handPointerText : undefined,
+  }));
+  const selectedTrack = musicTracks.find((t) => t.id === musicId) ?? null;
+
+  // --- tam ekran önizleme ---
+  if (showPreview) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-black">
+        <button
+          onClick={() => setShowPreview(false)}
+          className="fixed top-4 right-4 z-[10000] bg-white/90 backdrop-blur-sm text-black px-4 py-2 rounded-lg shadow-lg font-semibold hover:bg-white transition-colors"
+        >
+          ← Editöre Dön
+        </button>
+        <TemplateView
+          recipientName={recipientName || "İsim"}
+          slides={previewSlides}
+          musicTrack={selectedTrack}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto relative">
       {/* Steps indicator */}
       <div className="flex items-center gap-2 mb-8">
         {Array.from({ length: totalSteps }, (_, i) => (
           <div key={i} className="flex items-center gap-2 flex-1">
             <button
               onClick={() => setCurrentStep(i + 1)}
-              className={`w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center transition-all ${
-                currentStep === i + 1
-                  ? "bg-purple-600 text-white"
-                  : currentStep > i + 1
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-200 text-gray-500"
-              }`}
+              className={`w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center transition-all ${currentStep === i + 1
+                ? "bg-purple-600 text-white"
+                : currentStep > i + 1
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-200 text-gray-500"
+                }`}
             >
               {currentStep > i + 1 ? "✓" : i + 1}
             </button>
@@ -392,11 +425,10 @@ export default function EditorPage() {
                           key={gi}
                           onClick={() => updateSlide(index, "gradient", preset.gradient)}
                           title={preset.name}
-                          className={`w-8 h-8 rounded-full border-2 transition-all ${
-                            slide.gradient.from === preset.gradient.from
-                              ? "border-purple-500 scale-110"
-                              : "border-transparent"
-                          }`}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${slide.gradient.from === preset.gradient.from
+                            ? "border-purple-500 scale-110"
+                            : "border-transparent"
+                            }`}
                           style={{
                             background: `linear-gradient(135deg, ${preset.gradient.from}, ${preset.gradient.to})`,
                           }}
@@ -531,9 +563,8 @@ export default function EditorPage() {
             <div className="flex flex-wrap gap-2 mb-6">
               <button
                 onClick={() => setSelectedCategory("all")}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === "all" ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === "all" ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
               >
                 Tümü
               </button>
@@ -541,11 +572,10 @@ export default function EditorPage() {
                 <button
                   key={cat.value}
                   onClick={() => setSelectedCategory(cat.value)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    selectedCategory === cat.value
-                      ? "bg-purple-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === cat.value
+                    ? "bg-purple-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
                 >
                   {cat.emoji} {cat.label}
                 </button>
@@ -567,11 +597,10 @@ export default function EditorPage() {
                     <button
                       key={track.id}
                       onClick={() => setMusicId(track.id)}
-                      className={`w-full flex items-center gap-4 p-4 rounded-lg text-left transition-all ${
-                        musicId === track.id
-                          ? "bg-purple-100 border-2 border-purple-500"
-                          : "bg-gray-50 border border-gray-200 hover:bg-gray-100"
-                      }`}
+                      className={`w-full flex items-center gap-4 p-4 rounded-lg text-left transition-all ${musicId === track.id
+                        ? "bg-purple-100 border-2 border-purple-500"
+                        : "bg-gray-50 border border-gray-200 hover:bg-gray-100"
+                        }`}
                     >
                       <div className="text-2xl">{musicId === track.id ? "🎵" : "♪"}</div>
                       <div>
@@ -721,22 +750,31 @@ export default function EditorPage() {
             ← Geri
           </button>
 
-          {currentStep < totalSteps ? (
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => setCurrentStep((s) => Math.min(totalSteps, s + 1))}
-              className="px-6 py-2.5 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              onClick={() => setShowPreview(true)}
+              className="px-5 py-2.5 border border-purple-300 text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm"
             >
-              İleri →
+              👁️ Önizleme
             </button>
-          ) : (
-            <button
-              onClick={handleSave}
-              disabled={saving || !title || !recipientName || !slug}
-              className="px-8 py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
-            >
-              {saving ? "Kaydediliyor..." : "Kaydet & Taslak Oluştur 💾"}
-            </button>
-          )}
+
+            {currentStep < totalSteps ? (
+              <button
+                onClick={() => setCurrentStep((s) => Math.min(totalSteps, s + 1))}
+                className="px-6 py-2.5 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                İleri →
+              </button>
+            ) : (
+              <button
+                onClick={handleSave}
+                disabled={saving || !title || !recipientName || !slug}
+                className="px-8 py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                {saving ? "Kaydediliyor..." : "Kaydet & Taslak Oluştur 💾"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
