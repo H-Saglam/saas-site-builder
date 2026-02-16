@@ -13,7 +13,6 @@ export default function TemplatePickerModal({ open, onClose }: TemplatePickerMod
     const router = useRouter();
     const modalRef = useRef<HTMLDivElement>(null);
 
-    // ESC tuşu ile kapatma
     useEffect(() => {
         if (!open) return;
         const handleKey = (e: KeyboardEvent) => {
@@ -23,16 +22,13 @@ export default function TemplatePickerModal({ open, onClose }: TemplatePickerMod
         return () => window.removeEventListener("keydown", handleKey);
     }, [open, onClose]);
 
-    // Body scroll lock
     useEffect(() => {
         if (open) {
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "";
         }
-        return () => {
-            document.body.style.overflow = "";
-        };
+        return () => { document.body.style.overflow = ""; };
     }, [open]);
 
     if (!open) return null;
@@ -55,43 +51,40 @@ export default function TemplatePickerModal({ open, onClose }: TemplatePickerMod
             onClick={handleBackdropClick}
             style={{ animation: "fadeIn 0.2s ease-out" }}
         >
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-            {/* Modal */}
             <div
                 ref={modalRef}
-                className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden"
+                className="relative bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden"
                 style={{ animation: "slideUp 0.3s ease-out" }}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800">
                     <div>
-                        <h2 className="text-xl font-bold text-gray-800">Şablon Seçin</h2>
-                        <p className="text-sm text-gray-500 mt-0.5">Siteniz için bir şablon seçerek başlayın</p>
+                        <h2 className="text-lg font-semibold text-white">Şablon Seçin</h2>
+                        <p className="text-sm text-zinc-400 mt-0.5">Siteniz için bir şablon seçerek başlayın</p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors text-lg"
+                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors text-lg"
                     >
                         ✕
                     </button>
                 </div>
 
-                {/* Body — kartlar */}
-                <div className="p-6 overflow-y-auto" style={{ maxHeight: "calc(85vh - 72px)" }}>
+                {/* Body */}
+                <div className="p-6 overflow-y-auto" style={{ maxHeight: "calc(85vh - 80px)" }}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {TEMPLATES.map((tpl) => (
                             <button
                                 key={tpl.id}
                                 onClick={() => handleSelectTemplate(tpl)}
                                 disabled={!tpl.isAvailable}
-                                className={`group relative text-left rounded-xl overflow-hidden border-2 transition-all duration-200 ${tpl.isAvailable
-                                        ? "border-gray-200 hover:border-purple-400 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
-                                        : "border-gray-100 opacity-60 cursor-not-allowed"
+                                className={`group relative text-left rounded-xl overflow-hidden border transition-all duration-200 ${tpl.isAvailable
+                                        ? "border-zinc-700 hover:border-zinc-600 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+                                        : "border-zinc-800 opacity-40 cursor-not-allowed"
                                     }`}
                             >
-                                {/* Gradient preview */}
                                 <div
                                     className="h-28 flex items-center justify-center relative"
                                     style={{
@@ -102,33 +95,30 @@ export default function TemplatePickerModal({ open, onClose }: TemplatePickerMod
                                         {tpl.emoji}
                                     </span>
 
-                                    {/* Yakında etiketi */}
                                     {!tpl.isAvailable && (
-                                        <div className="absolute top-2 right-2 bg-white/90 text-gray-600 text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+                                        <div className="absolute top-2 right-2 bg-zinc-900/90 text-zinc-400 text-xs font-medium px-2.5 py-1 rounded-full">
                                             Yakında 🔜
                                         </div>
                                     )}
 
-                                    {/* Hover glow */}
                                     {tpl.isAvailable && (
                                         <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-200" />
                                     )}
                                 </div>
 
-                                {/* Kart bilgileri */}
-                                <div className="p-4">
+                                <div className="p-4 bg-zinc-800/50">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="font-semibold text-gray-800 text-sm">{tpl.name}</h3>
-                                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-medium">
+                                        <h3 className="font-semibold text-white text-sm">{tpl.name}</h3>
+                                        <span className="text-[10px] bg-zinc-700 text-zinc-400 px-1.5 py-0.5 rounded-full font-medium">
                                             {tpl.category}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+                                    <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">
                                         {tpl.description}
                                     </p>
 
                                     {tpl.isAvailable && (
-                                        <div className="mt-3 text-xs font-semibold text-purple-600 group-hover:text-purple-700 transition-colors">
+                                        <div className="mt-3 text-xs font-semibold text-rose-400 group-hover:text-rose-300 transition-colors">
                                             Seç ve Başla →
                                         </div>
                                     )}
@@ -139,7 +129,6 @@ export default function TemplatePickerModal({ open, onClose }: TemplatePickerMod
                 </div>
             </div>
 
-            {/* Animasyon CSS */}
             <style jsx>{`
         @keyframes fadeIn {
           from { opacity: 0; }

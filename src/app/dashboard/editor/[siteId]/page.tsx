@@ -112,7 +112,7 @@ export default function EditSitePage() {
     fetch("/api/music")
       .then((r) => r.json())
       .then((d) => setMusicTracks(d.tracks ?? []))
-      .catch(() => {});
+      .catch(() => { });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteId]);
 
@@ -224,17 +224,17 @@ export default function EditSitePage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
       </div>
     );
   }
 
   if (showPreview) {
     return (
-      <div className="relative">
+      <div className="fixed inset-0 z-[9999] bg-black">
         <button
           onClick={() => setShowPreview(false)}
-          className="fixed top-4 right-4 z-[200] bg-white text-black px-4 py-2 rounded-lg shadow-lg font-semibold"
+          className="fixed top-4 right-4 z-[10000] bg-white/90 backdrop-blur-sm text-black px-4 py-2 rounded-lg shadow-lg font-semibold hover:bg-white transition-colors"
         >
           ← Editöre Dön
         </button>
@@ -251,21 +251,21 @@ export default function EditSitePage() {
     <div className="max-w-4xl mx-auto py-8 px-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <button onClick={() => router.push("/dashboard")} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+        <button onClick={() => router.push("/dashboard")} className="flex items-center gap-2 text-zinc-400 hover:text-white">
           <ArrowLeft className="h-4 w-4" /> Geri
         </button>
         <div className="flex gap-3">
-          <button onClick={() => setShowPreview(true)} className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200">
+          <button onClick={() => setShowPreview(true)} className="flex items-center gap-2 bg-zinc-800 text-zinc-300 px-4 py-2 rounded-lg hover:bg-zinc-700">
             <Eye className="h-4 w-4" /> Önizleme
           </button>
-          <button onClick={handleSave} disabled={saving || editExpired} className="flex items-center gap-2 bg-pink-600 text-white px-6 py-2 rounded-lg hover:bg-pink-700 disabled:opacity-50">
+          <button onClick={handleSave} disabled={saving || editExpired} className="flex items-center gap-2 bg-white text-zinc-900 px-6 py-2 rounded-lg hover:bg-zinc-100 disabled:opacity-50">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {editExpired ? "Düzenleme Süresi Doldu" : "Kaydet"}
           </button>
         </div>
       </div>
 
-      <h1 className="text-2xl font-bold mb-6">Siteyi Düzenle</h1>
+      <h1 className="text-2xl font-bold mb-6 text-white">Siteyi Düzenle</h1>
 
       {/* Düzenleme süresi uyarısı */}
       {editExpired && (
@@ -286,8 +286,8 @@ export default function EditSitePage() {
       )}
 
       {/* Genel Bilgiler */}
-      <section className="bg-white rounded-xl border p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">Genel Bilgiler</h2>
+      <section className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4 text-white">Genel Bilgiler</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Slug (URL)</label>
@@ -304,7 +304,7 @@ export default function EditSitePage() {
         </div>
 
         {/* Gizlilik */}
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+        <div className="mt-4 p-4 bg-zinc-800 rounded-lg">
           <div className="flex items-center gap-3 mb-3">
             <button onClick={() => setIsPrivate(!isPrivate)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${isPrivate ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>
               {isPrivate ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
@@ -321,19 +321,19 @@ export default function EditSitePage() {
       </section>
 
       {/* Müzik */}
-      <section className="bg-white rounded-xl border p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+      <section className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-white">
           <Music className="h-5 w-5" /> Müzik
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <button onClick={() => setSelectedMusicId(null)} className={`p-3 rounded-lg border text-left text-sm ${!selectedMusicId ? "border-pink-500 bg-pink-50" : ""}`}>
+          <button onClick={() => setSelectedMusicId(null)} className={`p-3 rounded-lg border text-left text-sm ${!selectedMusicId ? "border-rose-500/40 bg-rose-500/10" : ""}`}>
             Müzik Yok
           </button>
           {MUSIC_CATEGORIES.map((cat) => (
             <div key={cat.value}>
-              <p className="text-xs font-semibold text-gray-500 mb-1">{cat.emoji} {cat.label}</p>
+              <p className="text-xs font-semibold text-zinc-500 mb-1">{cat.emoji} {cat.label}</p>
               {musicTracks.filter((t) => t.category === cat.value).map((track) => (
-                <button key={track.id} onClick={() => setSelectedMusicId(track.id)} className={`w-full p-3 rounded-lg border text-left text-sm mb-1 ${selectedMusicId === track.id ? "border-pink-500 bg-pink-50" : ""}`}>
+                <button key={track.id} onClick={() => setSelectedMusicId(track.id)} className={`w-full p-3 rounded-lg border text-left text-sm mb-1 ${selectedMusicId === track.id ? "border-rose-500/40 bg-rose-500/10" : ""}`}>
                   {track.title} — {track.artist}
                 </button>
               ))}
@@ -343,18 +343,18 @@ export default function EditSitePage() {
       </section>
 
       {/* Slide'lar */}
-      <section className="bg-white rounded-xl border p-6 mb-6">
+      <section className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Slide&apos;lar ({slides.length}/12)</h2>
+          <h2 className="text-lg font-semibold text-white">Slide&apos;lar ({slides.length}/12)</h2>
           {slides.length < 12 && (
             <div className="flex gap-2">
-              <button onClick={() => addSlide("photo")} className="flex items-center gap-1 text-sm bg-gray-100 px-3 py-1.5 rounded-lg hover:bg-gray-200">
+              <button onClick={() => addSlide("photo")} className="flex items-center gap-1 text-sm bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg hover:bg-zinc-700">
                 <ImageIcon className="h-3 w-3" /> Fotoğraf
               </button>
-              <button onClick={() => addSlide("collage")} className="flex items-center gap-1 text-sm bg-gray-100 px-3 py-1.5 rounded-lg hover:bg-gray-200">
+              <button onClick={() => addSlide("collage")} className="flex items-center gap-1 text-sm bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg hover:bg-zinc-700">
                 <Layout className="h-3 w-3" /> Kolaj
               </button>
-              <button onClick={() => addSlide("text")} className="flex items-center gap-1 text-sm bg-gray-100 px-3 py-1.5 rounded-lg hover:bg-gray-200">
+              <button onClick={() => addSlide("text")} className="flex items-center gap-1 text-sm bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg hover:bg-zinc-700">
                 <Type className="h-3 w-3" /> Metin
               </button>
             </div>
@@ -366,7 +366,7 @@ export default function EditSitePage() {
             <div key={i} className="border rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <GripVertical className="h-4 w-4 text-gray-400" />
+                  <GripVertical className="h-4 w-4 text-zinc-400" />
                   <span className="text-sm font-semibold">
                     #{slide.order} — {slide.type === "cover" ? "Kapak" : slide.type === "photo" ? "Fotoğraf" : slide.type === "collage" ? "Kolaj" : slide.type === "text" ? "Metin" : "Final"}
                   </span>
@@ -394,7 +394,7 @@ export default function EditSitePage() {
                 <label className="block text-xs font-medium mb-1">Arka Plan Rengi</label>
                 <div className="flex gap-2 flex-wrap">
                   {GRADIENT_PRESETS.map((g, gi) => (
-                    <button key={gi} onClick={() => updateSlide(i, { gradient: g.gradient })} className={`w-8 h-8 rounded-full border-2 ${slide.gradient.from === g.gradient.from ? "border-pink-500 scale-110" : "border-transparent"}`} style={{ background: `linear-gradient(135deg, ${g.gradient.from}, ${g.gradient.to})` }} />
+                    <button key={gi} onClick={() => updateSlide(i, { gradient: g.gradient })} className={`w-8 h-8 rounded-full border-2 ${slide.gradient.from === g.gradient.from ? "border-rose-500 scale-110" : "border-transparent"}`} style={{ background: `linear-gradient(135deg, ${g.gradient.from}, ${g.gradient.to})` }} />
                   ))}
                 </div>
               </div>

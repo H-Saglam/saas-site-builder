@@ -2,20 +2,20 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-500 via-purple-600 to-indigo-700 font-[var(--font-outfit)]">
+    <div className="min-h-screen bg-zinc-950 font-[var(--font-outfit)]">
       {/* Navigation */}
-      <nav className="flex items-center justify-between px-6 py-4 md:px-12">
-        <div className="text-2xl font-bold text-white">💝 Özel Bir Anı</div>
+      <nav className="flex items-center justify-between px-6 py-5 md:px-12 border-b border-zinc-800/50">
+        <div className="text-xl font-bold text-white tracking-tight">💝 Özel Bir Anı</div>
         <div className="flex items-center gap-4">
           <Link
             href="/sign-in"
-            className="text-white/80 hover:text-white transition-colors text-sm"
+            className="text-zinc-400 hover:text-white transition-colors text-sm"
           >
             Giriş Yap
           </Link>
           <Link
             href="/sign-up"
-            className="bg-white text-purple-700 px-5 py-2 rounded-full font-semibold text-sm hover:bg-white/90 transition-colors"
+            className="bg-white text-zinc-900 px-5 py-2 rounded-lg font-semibold text-sm hover:bg-zinc-100 transition-colors"
           >
             Hemen Başla
           </Link>
@@ -23,27 +23,29 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center text-center px-6 py-20 md:py-32">
-        <h1 className="text-4xl md:text-6xl font-bold text-white max-w-3xl leading-tight mb-6">
-          Sevdiklerinize Özel
+      <section className="flex flex-col items-center justify-center text-center px-6 py-24 md:py-36">
+        <div className="inline-flex items-center gap-2 bg-zinc-800/50 text-zinc-400 text-xs font-medium px-4 py-1.5 rounded-full mb-8 border border-zinc-700/50">
+          ✨ Sevdiklerinize özel dijital hediyeler
+        </div>
+        <h1 className="text-4xl md:text-6xl font-bold text-white max-w-3xl leading-tight mb-6 tracking-tight">
+          Anılarınızı
           <br />
-          <span className="text-pink-200">Dijital Hikayeler</span> Oluşturun
+          <span className="text-rose-400">Dijital Hikayelere</span> Dönüştürün
         </h1>
-        <p className="text-lg md:text-xl text-white/80 max-w-xl mb-10">
+        <p className="text-lg md:text-xl text-zinc-400 max-w-xl mb-10 leading-relaxed">
           Fotoğraflarınız, müzikleriniz ve özel mesajlarınızla Instagram Stories
-          tarzında interaktif hikaye siteleri tasarlayın. Doğum günü, yıl dönümü
-          veya sevgililer günü hediyesi olarak paylaşın.
+          tarzında interaktif hikaye siteleri tasarlayın.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
           <Link
             href="/sign-up"
-            className="bg-white text-purple-700 px-8 py-4 rounded-full font-bold text-lg hover:bg-white/90 transition-all hover:scale-105 shadow-lg"
+            className="bg-white text-zinc-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-zinc-100 transition-all shadow-lg shadow-white/10"
           >
             Ücretsiz Dene ✨
           </Link>
           <Link
             href="/demo"
-            className="border-2 border-white/40 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white/10 transition-all"
+            className="border border-zinc-700 text-zinc-300 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-zinc-800/50 transition-all"
           >
             Demo Gör 👀
           </Link>
@@ -51,11 +53,12 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section className="bg-white/10 backdrop-blur-sm py-20 px-6">
-        <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-16">
+      <section className="py-24 px-6 border-t border-zinc-800/50">
+        <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4 tracking-tight">
           Nasıl Çalışır?
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <p className="text-zinc-500 text-center mb-16">3 adımda hazır</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {[
             {
               step: "1",
@@ -78,40 +81,40 @@ export default function Home() {
           ].map((item) => (
             <div
               key={item.step}
-              className="bg-white/10 backdrop-blur-md rounded-2xl p-8 text-center hover:bg-white/20 transition-all"
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center hover:border-zinc-700 transition-all"
             >
-              <div className="text-5xl mb-4">{item.emoji}</div>
-              <div className="text-sm font-semibold text-pink-200 mb-2">
+              <div className="text-5xl mb-5">{item.emoji}</div>
+              <div className="text-xs font-semibold text-rose-400 mb-2 tracking-wider uppercase">
                 Adım {item.step}
               </div>
               <h3 className="text-xl font-bold text-white mb-3">
                 {item.title}
               </h3>
-              <p className="text-white/70">{item.desc}</p>
+              <p className="text-zinc-500 text-sm leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Pricing */}
-      <section className="py-20 px-6">
-        <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4">
+      <section className="py-24 px-6 border-t border-zinc-800/50">
+        <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4 tracking-tight">
           Paketler
         </h2>
-        <p className="text-white/60 text-center mb-16">
+        <p className="text-zinc-500 text-center mb-16">
           İhtiyacınıza uygun paketi seçin
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
           {/* Standart */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
             <h3 className="text-xl font-bold text-white mb-2">
               Standart Paket
             </h3>
             <div className="text-4xl font-bold text-white mb-1">
-              149<span className="text-lg">₺</span>
+              149<span className="text-lg text-zinc-500">₺</span>
             </div>
-            <p className="text-white/50 text-sm mb-6">Tek seferlik ödeme</p>
-            <ul className="space-y-3 text-white/80 mb-8">
+            <p className="text-zinc-500 text-sm mb-6">Tek seferlik ödeme</p>
+            <ul className="space-y-3 text-zinc-400 text-sm mb-8">
               {[
                 "1 yıl boyunca yayında",
                 "3-12 arası slide",
@@ -121,31 +124,31 @@ export default function Home() {
                 "Şifre koruma",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-2">
-                  <span className="text-green-400">✓</span> {item}
+                  <span className="text-emerald-400">✓</span> {item}
                 </li>
               ))}
             </ul>
             <Link
               href="/sign-up"
-              className="block w-full text-center bg-white/20 text-white px-6 py-3 rounded-full font-semibold hover:bg-white/30 transition-colors"
+              className="block w-full text-center bg-zinc-800 text-white px-6 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition-colors"
             >
               Başla
             </Link>
           </div>
 
           {/* Premium */}
-          <div className="bg-gradient-to-br from-amber-400/20 to-orange-500/20 backdrop-blur-md rounded-2xl p-8 border-2 border-amber-400/50 relative">
-            <div className="absolute -top-3 right-6 bg-amber-400 text-black text-xs font-bold px-3 py-1 rounded-full">
+          <div className="bg-zinc-900 border-2 border-rose-500/30 rounded-2xl p-8 relative">
+            <div className="absolute -top-3 right-6 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full">
               POPÜLER
             </div>
             <h3 className="text-xl font-bold text-white mb-2">
               Premium Paket
             </h3>
             <div className="text-4xl font-bold text-white mb-1">
-              249<span className="text-lg">₺</span>
+              249<span className="text-lg text-zinc-500">₺</span>
             </div>
-            <p className="text-white/50 text-sm mb-6">Tek seferlik ödeme</p>
-            <ul className="space-y-3 text-white/80 mb-8">
+            <p className="text-zinc-500 text-sm mb-6">Tek seferlik ödeme</p>
+            <ul className="space-y-3 text-zinc-400 text-sm mb-8">
               {[
                 "Standart paketteki her şey",
                 "Siteyi ZIP olarak indirme",
@@ -154,13 +157,13 @@ export default function Home() {
                 "Öncelikli destek",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-2">
-                  <span className="text-amber-400">✓</span> {item}
+                  <span className="text-rose-400">✓</span> {item}
                 </li>
               ))}
             </ul>
             <Link
               href="/sign-up"
-              className="block w-full text-center bg-amber-400 text-black px-6 py-3 rounded-full font-bold hover:bg-amber-300 transition-colors"
+              className="block w-full text-center bg-rose-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-rose-600 transition-colors"
             >
               Premium Başla ⭐
             </Link>
@@ -169,7 +172,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-8 px-6 text-center text-white/40 text-sm">
+      <footer className="border-t border-zinc-800/50 py-8 px-6 text-center text-zinc-600 text-sm">
         <p>&copy; 2026 Özel Bir Anı. Tüm hakları saklıdır.</p>
       </footer>
     </div>

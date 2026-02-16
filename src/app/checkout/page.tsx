@@ -10,93 +10,93 @@ function CheckoutContent() {
   const siteName = params.get("name") || "Site";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
       <div className="max-w-3xl w-full">
         {/* Başlık */}
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-white mb-2">
             Planını Seç 💝
           </h1>
-          <p className="text-gray-500">
-            <span className="font-medium text-gray-700">{siteName}</span> siteni canlıya almak için bir paket seç
+          <p className="text-zinc-400">
+            <span className="font-medium text-zinc-200">{siteName}</span> siteni canlıya almak için bir paket seç
           </p>
         </div>
 
         {/* Paketler */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Standart */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:shadow-lg transition-shadow">
+          <div className="bg-zinc-900 rounded-2xl shadow-sm border border-zinc-800 p-8 hover:shadow-lg transition-shadow">
             <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-1">Standart</h2>
-              <p className="text-sm text-gray-500 mb-4">Sevdiklerinize özel site</p>
-              <div className="text-4xl font-bold text-purple-600 mb-1">
-                149<span className="text-lg font-normal text-gray-400">₺</span>
+              <h2 className="text-xl font-bold text-white mb-1">Standart</h2>
+              <p className="text-sm text-zinc-500 mb-4">Sevdiklerinize özel site</p>
+              <div className="text-4xl font-bold text-white mb-1">
+                149<span className="text-lg font-normal text-zinc-400">₺</span>
               </div>
-              <p className="text-xs text-gray-400">tek seferlik</p>
+              <p className="text-xs text-zinc-400">tek seferlik</p>
             </div>
 
-            <ul className="space-y-3 mb-8 text-sm text-gray-600">
+            <ul className="space-y-3 mb-8 text-sm text-zinc-400">
               <li className="flex items-center gap-2">
-                <span className="text-green-500">✓</span> 1 yıl online erişim
+                <span className="text-emerald-400">✓</span> 1 yıl online erişim
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-green-500">✓</span> 3-12 arası slide
+                <span className="text-emerald-400">✓</span> 3-12 arası slide
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-green-500">✓</span> Müzik kütüphanesi
+                <span className="text-emerald-400">✓</span> Müzik kütüphanesi
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-green-500">✓</span> Şifre koruması
+                <span className="text-emerald-400">✓</span> Şifre koruması
               </li>
-              <li className="flex items-center gap-2 text-gray-400">
+              <li className="flex items-center gap-2 text-zinc-400">
                 <span>✕</span> Offline ZIP indirme
               </li>
             </ul>
 
             <button
               onClick={() => handlePayment(siteId, "standard")}
-              className="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition-colors"
+              className="w-full bg-white text-zinc-900 py-3 rounded-xl font-semibold hover:bg-zinc-100 transition-colors"
             >
               Standart Satın Al
             </button>
           </div>
 
           {/* Premium */}
-          <div className="bg-white rounded-2xl shadow-md border-2 border-pink-400 p-8 relative hover:shadow-lg transition-shadow">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-pink-500 text-white text-xs font-bold px-4 py-1 rounded-full">
+          <div className="bg-zinc-900 rounded-2xl shadow-md border-2 border-rose-500/30 p-8 relative hover:shadow-lg transition-shadow">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-rose-500 text-white text-xs font-bold px-4 py-1 rounded-full">
               ÖNERİLEN
             </div>
 
             <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-1">Premium ⭐</h2>
-              <p className="text-sm text-gray-500 mb-4">Online + Offline paket</p>
-              <div className="text-4xl font-bold text-pink-600 mb-1">
-                249<span className="text-lg font-normal text-gray-400">₺</span>
+              <h2 className="text-xl font-bold text-white mb-1">Premium ⭐</h2>
+              <p className="text-sm text-zinc-500 mb-4">Online + Offline paket</p>
+              <div className="text-4xl font-bold text-rose-600 mb-1">
+                249<span className="text-lg font-normal text-zinc-400">₺</span>
               </div>
-              <p className="text-xs text-gray-400">tek seferlik</p>
+              <p className="text-xs text-zinc-400">tek seferlik</p>
             </div>
 
-            <ul className="space-y-3 mb-8 text-sm text-gray-600">
+            <ul className="space-y-3 mb-8 text-sm text-zinc-400">
               <li className="flex items-center gap-2">
-                <span className="text-green-500">✓</span> 1 yıl online erişim
+                <span className="text-emerald-400">✓</span> 1 yıl online erişim
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-green-500">✓</span> 3-12 arası slide
+                <span className="text-emerald-400">✓</span> 3-12 arası slide
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-green-500">✓</span> Müzik kütüphanesi
+                <span className="text-emerald-400">✓</span> Müzik kütüphanesi
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-green-500">✓</span> Şifre koruması
+                <span className="text-emerald-400">✓</span> Şifre koruması
               </li>
-              <li className="flex items-center gap-2 font-medium text-pink-600">
-                <span className="text-green-500">✓</span> Offline ZIP indirme
+              <li className="flex items-center gap-2 font-medium text-rose-600">
+                <span className="text-emerald-400">✓</span> Offline ZIP indirme
               </li>
             </ul>
 
             <button
               onClick={() => handlePayment(siteId, "premium")}
-              className="w-full bg-pink-500 text-white py-3 rounded-xl font-semibold hover:bg-pink-600 transition-colors"
+              className="w-full bg-rose-500 text-white py-3 rounded-xl font-semibold hover:bg-rose-600 transition-colors"
             >
               Premium Satın Al
             </button>
@@ -105,10 +105,10 @@ function CheckoutContent() {
 
         {/* Alt bilgi */}
         <div className="text-center mt-8">
-          <p className="text-xs text-gray-400 mb-4">
+          <p className="text-xs text-zinc-500 mb-4">
             Ödeme altyapısı Shopier tarafından güvenli şekilde sağlanmaktadır.
           </p>
-          <Link href="/dashboard" className="text-sm text-purple-600 hover:underline">
+          <Link href="/dashboard" className="text-sm text-rose-600 hover:underline">
             ← Dashboard&apos;a Dön
           </Link>
         </div>
