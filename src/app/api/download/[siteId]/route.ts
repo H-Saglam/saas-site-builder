@@ -4,77 +4,133 @@ import { getServiceSupabase } from "@/lib/supabase";
 import JSZip from "jszip";
 import type { SiteData, SlideData } from "@/lib/types";
 import { siteRowToData } from "@/lib/types";
+import fs from "fs";
+import path from "path";
 
 /*
   GET /api/download/[siteId]
   Premium kullanıcılar için offline HTML + CSS + görseller içeren ZIP oluşturur.
+  Canlı siteyle birebir aynı HTML/CSS/JS yapısını kullanır.
 */
+
+function songBadgeHTML(songTitle?: string, songArtist?: string): string {
+  if (!songTitle || !songArtist) return "";
+  return `
+      <div class="song-badge">
+        <div class="equalizer">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="song-info">
+          <span class="song-title">${songTitle}</span>
+          <span class="artist">${songArtist}</span>
+        </div>
+      </div>`;
+}
+
+function generateSlideHTML(slide: SlideData, index: number, site: SiteData): string {
+  const gradient = `linear-gradient(135deg, ${slide.gradient.from}, ${slide.gradient.to})`;
+  const isFirst = index === 0;
+  const activeClass = isFirst ? " active" : "";
+  const songTitle = site.musicTrack?.title;
+  const songArtist = site.musicTrack?.artist;
+  const badge = songBadgeHTML(songTitle, songArtist);
+
+  switch (slide.type) {
+    case "cover":
+      return `
+    <section class="slide${activeClass}" style="background:${gradient}">
+      ${badge}
+      <div class="content">
+        <h1 class="animate-up">${site.recipientName}...</h1>
+        <p class="animate-up delay-1">${slide.description}</p>
+        <div class="tap-hint" id="tap-hint">Başlamak için dokun ❤️</div>
+      </div>
+    </section>`;
+
+    case "photo":
+      return `
+    <section class="slide${activeClass}" style="background:${gradient}">
+      ${badge}
+      <div class="content">
+        <div class="photo-frame animate-pop">
+          ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.heading}">` : ""}
+        </div>
+        <h2 class="animate-up">${slide.heading}</h2>
+        ${slide.description ? `<p class="animate-up delay-1">${slide.description}</p>` : ""}
+      </div>
+    </section>`;
+
+    case "collage": {
+      const imgs = (slide.collageUrls ?? [])
+        .map((url: string, i: number) => `<img src="${url}" class="c-img c-${i + 1} animate-pop delay-${i + 1}" alt="Kolaj ${i + 1}">`)
+        .join("\n          ");
+      return `
+    <section class="slide${activeClass}" style="background:${gradient}">
+      ${badge}
+      <div class="content">
+        <div class="collage">
+          ${imgs}
+        </div>
+        <h2 class="animate-up">${slide.heading}</h2>
+        ${slide.description ? `<p class="animate-up delay-1">${slide.description}</p>` : ""}
+      </div>
+    </section>`;
+    }
+
+    case "text":
+      return `
+    <section class="slide slide-text${activeClass}" style="background:${gradient}">
+      ${badge}
+      <div class="content">
+        <div class="text-content">
+          <h2 class="animate-up">${slide.heading}</h2>
+          ${slide.description ? `<p class="animate-up delay-1">${slide.description}</p>` : ""}
+        </div>
+      </div>
+    </section>`;
+
+    case "finale":
+      return `
+    <section class="slide slide-finale${activeClass}" style="background:${gradient}">
+      ${badge}
+      <div class="content">
+        ${slide.imageUrl ? `
+        <div class="photo-frame animate-pop">
+          <img src="${slide.imageUrl}" alt="Final">
+          ${slide.handPointerText ? `<div class="hand-pointer">${slide.handPointerText}</div>` : ""}
+        </div>` : ""}
+        <h1 class="animate-up delay-1">${slide.heading}</h1>
+        ${slide.description ? `<p class="animate-up delay-2">${slide.description}</p>` : ""}
+        <button class="replay-btn" onclick="replay()">Başa Dön ↺</button>
+      </div>
+      <canvas class="confetti-canvas" id="confetti-canvas"></canvas>
+    </section>`;
+
+    default:
+      return "";
+  }
+}
+
+function generateProgressBarHTML(totalSlides: number): string {
+  const bars = Array.from({ length: totalSlides }, (_, i) => {
+    const slideNum = i + 1;
+    const width = slideNum === 1 ? "50%" : "0%";
+    return `      <div class="progress-bar-wrapper">
+        <div class="progress-bar${slideNum < 1 ? " completed" : ""}" style="width:${width}"></div>
+      </div>`;
+  });
+  return `    <div class="progress-container">\n${bars.join("\n")}\n    </div>`;
+}
 
 function generateOfflineHTML(site: SiteData): string {
   const slidesHTML = site.slides
-    .map((slide: SlideData) => {
-      const gradient = `linear-gradient(135deg, ${slide.gradient.from}, ${slide.gradient.to})`;
-
-      if (slide.type === "cover") {
-        return `
-    <div class="slide active" style="background:${gradient}">
-      <div class="content">
-        <h1 class="heading animate-up">Bu seni anlatan<br>bir hikaye<br><span style="color:#ff6b6b">${site.recipientName}</span> ❤️</h1>
-        <p class="description animate-pop">Dokunarak ilerle →</p>
-      </div>
-    </div>`;
-      }
-
-      if (slide.type === "photo") {
-        return `
-    <div class="slide" style="background:${gradient}">
-      <div class="content">
-        <h2 class="heading animate-up">${slide.heading}</h2>
-        ${slide.imageUrl ? `<img src="${slide.imageUrl}" class="photo animate-pop" alt="">` : ""}
-        <p class="description animate-pop">${slide.description}</p>
-      </div>
-    </div>`;
-      }
-
-      if (slide.type === "collage") {
-        const imgs = (slide.collageUrls ?? [])
-          .map((url: string) => `<img src="${url}" class="collage-img" alt="">`)
-          .join("\n          ");
-        return `
-    <div class="slide" style="background:${gradient}">
-      <div class="content">
-        <h2 class="heading animate-up">${slide.heading}</h2>
-        <div class="collage-container animate-pop">
-          ${imgs}
-        </div>
-        <p class="description animate-pop">${slide.description}</p>
-      </div>
-    </div>`;
-      }
-
-      if (slide.type === "text") {
-        return `
-    <div class="slide" style="background:${gradient}">
-      <div class="content">
-        <h2 class="heading animate-up">${slide.heading}</h2>
-        <p class="description animate-pop" style="font-size:1.1rem;max-width:90%">${slide.description}</p>
-      </div>
-    </div>`;
-      }
-
-      // finale
-      return `
-    <div class="slide" style="background:${gradient}">
-      <div class="content">
-        <h2 class="heading animate-up">${slide.heading}</h2>
-        ${slide.imageUrl ? `<img src="${slide.imageUrl}" class="photo animate-pop" alt="">` : ""}
-        <p class="description animate-pop">${slide.description}</p>
-        ${slide.handPointerText ? `<div class="hand-pointer animate-pop">${slide.handPointerText}</div>` : ""}
-        <button class="replay-btn" onclick="replay()">🔄 Tekrar İzle</button>
-      </div>
-    </div>`;
-    })
+    .map((slide, index) => generateSlideHTML(slide, index, site))
     .join("\n");
+
+  const musicUrl = site.musicTrack?.fileUrl || "";
+  const musicTag = musicUrl
+    ? `<audio id="bg-music" src="${musicUrl}" loop preload="auto"></audio>`
+    : "";
 
   return `<!DOCTYPE html>
 <html lang="tr">
@@ -82,76 +138,168 @@ function generateOfflineHTML(site: SiteData): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>${site.title}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#000}</style>
 </head>
 <body>
-  <div class="container">
-    <div class="progress-container">
-      ${site.slides.map((_: SlideData, i: number) => `<div class="progress-bar${i === 0 ? " active" : ""}" data-index="${i}"></div>`).join("\n      ")}
+  <div class="template-container" id="container">
+${generateProgressBarHTML(site.slides.length)}
+    <div class="slides-container">
+${slidesHTML}
     </div>
-    ${slidesHTML}
+    <div class="navigation-hint">Devam etmek için tıkla &rarr;</div>
   </div>
+  ${musicTag}
   <script src="script.js"><\/script>
 </body>
 </html>`;
 }
 
-function generateOfflineCSS(): string {
-  return `* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Segoe UI', sans-serif; overflow: hidden; background: #000; }
-.container { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
-.slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.6s ease; z-index: 1; }
-.slide.active { opacity: 1; z-index: 2; }
-.content { text-align: center; color: #fff; padding: 20px; }
-.heading { font-size: 1.6rem; margin-bottom: 15px; animation: animateUp 0.8s ease forwards; }
-.description { font-size: 0.95rem; opacity: 0.9; animation: animatePop 0.6s ease 0.3s both; }
-.photo { width: min(280px,80vw); height: min(280px,80vw); object-fit: cover; border-radius: 16px; margin: 15px auto; box-shadow: 0 8px 32px rgba(0,0,0,0.3); animation: animatePop 0.6s ease both; }
-.collage-container { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 15px auto; }
-.collage-img { width: 120px; height: 120px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-.collage-img:nth-child(1) { transform: rotate(-3deg); }
-.collage-img:nth-child(2) { transform: rotate(2deg) translateY(-10px); }
-.collage-img:nth-child(3) { transform: rotate(-1deg); }
-.hand-pointer { font-size: 1.2rem; margin-top: 10px; animation: handBounce 1.5s ease infinite; }
-.replay-btn { margin-top: 20px; padding: 12px 24px; border-radius: 50px; border: 2px solid #fff; background: rgba(255,255,255,0.15); color: #fff; font-size: 1rem; cursor: pointer; }
-.progress-container { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; gap: 4px; z-index: 100; }
-.progress-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.3); border-radius: 4px; overflow: hidden; }
-.progress-bar.active { background: rgba(255,255,255,0.9); }
-.progress-bar.done { background: rgba(255,255,255,0.9); }
-@keyframes animateUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
-@keyframes animatePop { from { opacity:0; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }
-@keyframes handBounce { 0%,100% { transform:translateX(0); } 50% { transform:translateX(-10px); } }
-`;
-}
-
-function generateOfflineJS(totalSlides: number): string {
-  return `(function(){
-  var current = 0;
+function generateOfflineJS(totalSlides: number, hasMusic: boolean): string {
+  return `(function() {
+  var current = 1;
   var total = ${totalSlides};
-  var slides = document.querySelectorAll('.slide');
-  var bars = document.querySelectorAll('.progress-bar');
+  var isFirstTap = true;
+  var touchStartX = 0;
 
-  function go(n) {
-    if (n < 0 || n >= total) return;
-    slides[current].classList.remove('active');
-    bars[current].classList.remove('active');
-    bars[current].classList.add('done');
-    current = n;
-    slides[current].classList.add('active');
-    bars[current].classList.add('active');
+  var container = document.getElementById('container');
+  var slides = document.querySelectorAll('.slide');
+  var barWrappers = document.querySelectorAll('.progress-bar-wrapper');
+  var tapHint = document.getElementById('tap-hint');
+  ${hasMusic ? `var audio = document.getElementById('bg-music');` : ""}
+
+  function updateProgress() {
+    barWrappers.forEach(function(wrapper, i) {
+      var bar = wrapper.querySelector('.progress-bar');
+      var slideNum = i + 1;
+      if (slideNum < current) {
+        bar.style.width = '100%';
+        bar.classList.add('completed');
+      } else if (slideNum === current) {
+        bar.style.width = '50%';
+        bar.classList.remove('completed');
+      } else {
+        bar.style.width = '0%';
+        bar.classList.remove('completed');
+      }
+    });
   }
 
-  document.querySelector('.container').addEventListener('click', function(e) {
+  function showSlide(n) {
+    if (n < 1 || n > total) return;
+    slides.forEach(function(slide) { slide.classList.remove('active'); });
+    slides[n - 1].classList.add('active');
+    current = n;
+    updateProgress();
+
+    // Confetti on finale
+    var canvas = slides[n - 1].querySelector('.confetti-canvas');
+    if (canvas) { launchConfetti(canvas); }
+  }
+
+  // Click handler
+  container.addEventListener('click', function(e) {
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+
+    if (isFirstTap && current === 1) {
+      isFirstTap = false;
+      if (tapHint) tapHint.style.display = 'none';
+      ${hasMusic ? `try { audio.play(); } catch(err) {}` : ""}
+      return;
+    }
+
     var x = e.clientX / window.innerWidth;
-    if (x > 0.2) go(current + 1);
-    else go(current - 1);
+    if (x < 0.2) { showSlide(current - 1); }
+    else { showSlide(current + 1); }
   });
 
+  // Touch/Swipe handler
+  container.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+
+  container.addEventListener('touchend', function(e) {
+    var diff = e.changedTouches[0].screenX - touchStartX;
+    if (isFirstTap && current === 1) {
+      isFirstTap = false;
+      if (tapHint) tapHint.style.display = 'none';
+      ${hasMusic ? `try { audio.play(); } catch(err) {}` : ""}
+      return;
+    }
+    if (diff < -50) showSlide(current + 1);
+    if (diff > 50) showSlide(current - 1);
+  }, { passive: true });
+
+  // Keyboard handler
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'ArrowRight' || e.key === ' ') go(current + 1);
-    if (e.key === 'ArrowLeft') go(current - 1);
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      if (isFirstTap && current === 1) {
+        isFirstTap = false;
+        if (tapHint) tapHint.style.display = 'none';
+        ${hasMusic ? `try { audio.play(); } catch(err) {}` : ""}
+        return;
+      }
+      showSlide(current + 1);
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      showSlide(current - 1);
+    }
   });
 
-  window.replay = function() { go(0); };
+  // Replay
+  window.replay = function() {
+    isFirstTap = true;
+    if (tapHint) tapHint.style.display = '';
+    showSlide(1);
+  };
+
+  // Simple confetti
+  function launchConfetti(canvas) {
+    var ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    var particles = [];
+    var colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff6eb4','#a855f7'];
+    for (var i = 0; i < 80; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        w: 6 + Math.random() * 6,
+        h: 4 + Math.random() * 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vx: (Math.random() - 0.5) * 3,
+        vy: 2 + Math.random() * 3,
+        rot: Math.random() * 360,
+        rotSpeed: (Math.random() - 0.5) * 10
+      });
+    }
+    var frames = 0;
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(function(p) {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.rotSpeed;
+        p.vy += 0.05;
+      });
+      frames++;
+      if (frames < 180) requestAnimationFrame(draw);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    draw();
+  }
+
+  // Initial progress
+  updateProgress();
 })();`;
 }
 
@@ -187,11 +335,25 @@ export async function GET(
 
   const site = siteRowToData(row);
 
+  // Read the real template.css from the project
+  let cssContent: string;
+  try {
+    const cssPath = path.join(process.cwd(), "src", "styles", "template.css");
+    cssContent = fs.readFileSync(cssPath, "utf-8");
+    // Remove .template-container scoping for standalone use
+    cssContent = cssContent.replace(/\.template-container\s+/g, ".template-container ");
+  } catch {
+    // Fallback: use inline
+    cssContent = "/* CSS yüklenemedi */";
+  }
+
+  const hasMusic = !!(site.musicTrack?.fileUrl);
+
   // ZIP oluştur
   const zip = new JSZip();
   zip.file("index.html", generateOfflineHTML(site));
-  zip.file("styles.css", generateOfflineCSS());
-  zip.file("script.js", generateOfflineJS(site.slides.length));
+  zip.file("styles.css", cssContent);
+  zip.file("script.js", generateOfflineJS(site.slides.length, hasMusic));
 
   const zipBuffer = await zip.generateAsync({ type: "uint8array" });
 
