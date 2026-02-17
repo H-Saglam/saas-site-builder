@@ -761,7 +761,7 @@ export default function EditorPage() {
             {currentStep < totalSteps ? (
               <button
                 onClick={() => setCurrentStep((s) => Math.min(totalSteps, s + 1))}
-                className="px-6 py-2.5 bg-white text-zinc-900 rounded-lg font-medium hover:bg-zinc-100 transition-colors"
+                className="px-6 py-2.5 bg-rose-500 text-white rounded-lg font-medium hover:bg-rose-600 transition-colors"
               >
                 İleri →
               </button>
@@ -769,7 +769,7 @@ export default function EditorPage() {
               <button
                 onClick={handleSave}
                 disabled={saving || !title || !recipientName || !slug}
-                className="px-8 py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
+                className="px-6 py-2.5 bg-rose-500 text-white rounded-lg font-medium hover:bg-rose-600 transition-colors disabled:opacity-50"
               >
                 {saving ? "Kaydediliyor..." : "Kaydet & Taslak Oluştur 💾"}
               </button>

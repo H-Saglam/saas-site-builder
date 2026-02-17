@@ -258,7 +258,7 @@ export default function EditSitePage() {
           <button onClick={() => setShowPreview(true)} className="flex items-center gap-2 bg-zinc-800 text-zinc-300 px-4 py-2 rounded-lg hover:bg-zinc-700">
             <Eye className="h-4 w-4" /> Önizleme
           </button>
-          <button onClick={handleSave} disabled={saving || editExpired} className="flex items-center gap-2 bg-white text-zinc-900 px-6 py-2 rounded-lg hover:bg-zinc-100 disabled:opacity-50">
+          <button onClick={handleSave} disabled={saving || editExpired} className="flex items-center gap-2 bg-rose-500 text-white px-6 py-2 rounded-lg hover:bg-rose-600 disabled:opacity-50">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {editExpired ? "Düzenleme Süresi Doldu" : "Kaydet"}
           </button>

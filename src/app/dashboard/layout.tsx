@@ -31,6 +31,12 @@ export default function DashboardLayout({
   }, [openPicker]);
 
   const isEditor = pathname.includes("/editor/");
+  const isPreview = pathname.includes("/preview/");
+
+  // Preview: full-screen, no sidebar/header
+  if (isPreview) {
+    return <>{children}</>;
+  }
 
   if (isEditor) {
     return (

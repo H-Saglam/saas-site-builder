@@ -56,8 +56,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
-  const [activating, setActivating] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -70,11 +68,7 @@ export default function DashboardPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    const handler = () => setMenuOpen(null);
-    window.addEventListener("click", handler);
-    return () => window.removeEventListener("click", handler);
-  }, []);
+
 
   const handleDelete = async (siteId: string) => {
     if (!confirm("Bu siteyi silmek istediğinize emin misiniz?")) return;
@@ -82,30 +76,7 @@ export default function DashboardPage() {
     if (res.ok) setSites(sites.filter((s) => s.id !== siteId));
   };
 
-  const handleActivate = async (site: SiteItem) => {
-    setActivating(site.id);
-    try {
-      const res = await fetch("/api/activate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ siteId: site.id }),
-      });
-      const data = await res.json();
 
-      if (data.success) {
-        setSites(sites.map((s) => s.id === site.id ? { ...s, status: "active" } : s));
-        alert("Site canlıya alındı! ✅");
-      } else if (data.needsPayment) {
-        router.push(`/checkout?siteId=${site.id}&name=${encodeURIComponent(site.recipient_name + "'e Özel")}`);
-      } else {
-        alert(data.message || data.error || "Bir hata oluştu");
-      }
-    } catch {
-      alert("Bir hata oluştu");
-    } finally {
-      setActivating(null);
-    }
-  };
 
   const filteredSites = sites.filter((site) => {
     if (filter === "active" && site.status !== "active") return false;
@@ -123,20 +94,7 @@ export default function DashboardPage() {
     return true;
   });
 
-  const statusBadge = (status: string) => {
-    const config: Record<string, { bg: string; text: string; label: string }> = {
-      active: { bg: "bg-emerald-500", text: "text-white", label: "Aktif" },
-      draft: { bg: "bg-zinc-600", text: "text-zinc-200", label: "Taslak" },
-      paid: { bg: "bg-blue-500", text: "text-white", label: "Ödendi" },
-      expired: { bg: "bg-red-500/80", text: "text-white", label: "Süresi Doldu" },
-    };
-    const c = config[status] || { bg: "bg-zinc-600", text: "text-white", label: status };
-    return (
-      <span className={`absolute top-3 right-3 ${c.bg} ${c.text} text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm uppercase tracking-wide`}>
-        {c.label}
-      </span>
-    );
-  };
+
 
   const filters: { key: FilterType; label: string }[] = [
     { key: "all", label: "Tüm Projeler" },
@@ -183,7 +141,7 @@ export default function DashboardPage() {
           {/* Create Button */}
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("open-template-picker"))}
-            className="bg-white text-zinc-900 px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 transition-colors flex items-center gap-2 whitespace-nowrap shadow-sm"
+            className="bg-rose-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-rose-600 transition-colors flex items-center gap-2 whitespace-nowrap shadow-sm"
           >
             <span className="text-lg leading-none">+</span> Yeni Site
           </button>
@@ -197,8 +155,8 @@ export default function DashboardPage() {
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${filter === f.key
-                ? "text-white"
-                : "text-zinc-500 hover:text-zinc-300"
+              ? "text-white"
+              : "text-zinc-500 hover:text-zinc-300"
               }`}
           >
             {f.label}
@@ -214,14 +172,16 @@ export default function DashboardPage() {
         {/* "Start a New Story" Card */}
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-template-picker"))}
-          className="group bg-zinc-900 rounded-2xl border border-zinc-800 hover:border-rose-500/30 transition-all flex flex-col items-center justify-center text-center p-10 min-h-[280px] hover:shadow-lg hover:shadow-rose-500/5"
+          className="group bg-zinc-900 rounded-2xl border border-dashed border-zinc-800 hover:border-zinc-600 transition-all flex flex-col items-center justify-center text-center p-8"
         >
-          <div className="w-14 h-14 bg-zinc-800 group-hover:bg-rose-500/10 rounded-full flex items-center justify-center mb-4 transition-colors">
-            <span className="text-2xl text-zinc-500 group-hover:text-rose-400 transition-colors">+</span>
+          <div className="w-12 h-12 rounded-xl bg-zinc-800 group-hover:bg-rose-500/10 flex items-center justify-center mb-4 transition-all group-hover:scale-110">
+            <svg className="w-5 h-5 text-zinc-500 group-hover:text-rose-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
           </div>
-          <h3 className="font-semibold text-white mb-1">Yeni Hikaye Oluştur</h3>
-          <p className="text-xs text-zinc-500 max-w-[180px] leading-relaxed">
-            Bir şablon seçerek anılarınızı kaydetmeye başlayın.
+          <h3 className="font-medium text-zinc-300 group-hover:text-white transition-colors text-sm mb-1">Yeni Hikaye Oluştur</h3>
+          <p className="text-[11px] text-zinc-600 max-w-[160px] leading-relaxed">
+            Bir şablon seçerek başlayın
           </p>
         </button>
 
@@ -230,23 +190,41 @@ export default function DashboardPage() {
           const gradient = site.slides?.[0]?.gradient;
           const coverImage = site.slides?.[0]?.imageUrl;
           const editRemaining = getTimeRemaining(site.created_at, 7);
+          const liveRemaining = site.status === "active" ? getTimeRemaining(site.created_at, 365) : null;
+
+          const statusConfig: Record<string, { color: string; label: string }> = {
+            active: { color: "bg-emerald-400", label: "Yayında" },
+            draft: { color: "bg-zinc-500", label: "Taslak" },
+            paid: { color: "bg-blue-400", label: "Ödendi" },
+            expired: { color: "bg-red-400", label: "Süresi Doldu" },
+          };
+          const st = statusConfig[site.status] || { color: "bg-zinc-500", label: site.status };
 
           return (
             <div
               key={site.id}
-              className="group bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden hover:border-zinc-700 hover:shadow-lg transition-all"
+              className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800/50 hover:border-zinc-700 transition-all flex flex-col"
             >
-              {/* Cover */}
-              <div className="relative h-40 overflow-hidden">
+              {/* Cover — clickable */}
+              <div
+                className="relative h-32 overflow-hidden flex-shrink-0 cursor-pointer group/cover"
+                onClick={() => {
+                  if (site.status === "active") {
+                    window.open(`/${site.slug}`, "_blank");
+                  } else {
+                    router.push(`/dashboard/preview/${site.id}`);
+                  }
+                }}
+              >
                 {coverImage ? (
                   <img
                     src={coverImage}
                     alt={site.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover/cover:scale-105 transition-transform duration-500"
                   />
                 ) : (
                   <div
-                    className="w-full h-full flex items-center justify-center text-white text-4xl"
+                    className="w-full h-full flex items-center justify-center text-3xl"
                     style={{
                       background: gradient
                         ? `linear-gradient(135deg, ${gradient.from}, ${gradient.to})`
@@ -256,98 +234,93 @@ export default function DashboardPage() {
                     💝
                   </div>
                 )}
-                {statusBadge(site.status)}
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover/cover:bg-black/30 transition-colors flex items-center justify-center">
+                  <span className="text-white text-xs font-semibold bg-black/50 px-3 py-1.5 rounded-full opacity-0 group-hover/cover:opacity-100 transition-opacity backdrop-blur-sm">
+                    {site.status === "active" ? "🔗 Siteyi Aç" : "👁 Önizleme"}
+                  </span>
+                </div>
               </div>
 
               {/* Content */}
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-1">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-white truncate text-sm">
-                      {site.recipient_name}&apos;e Özel
-                    </h3>
-                    <p className="text-xs text-zinc-500 mt-0.5">{getTimeAgo(site.created_at)} güncellendi</p>
-                  </div>
-                  {/* 3-dot menu */}
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpen(menuOpen === site.id ? null : site.id);
-                      }}
-                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors"
-                    >
-                      •••
-                    </button>
-                    {menuOpen === site.id && (
-                      <div className="absolute right-0 top-8 bg-zinc-800 border border-zinc-700 rounded-xl shadow-lg py-1 w-40 z-20">
-                        <Link
-                          href={`/dashboard/editor/${site.id}`}
-                          className="block px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors"
-                        >
-                          ✏️ Düzenle
-                        </Link>
-                        {site.status === "active" && (
-                          <Link
-                            href={`/${site.slug}`}
-                            target="_blank"
-                            className="block px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors"
-                          >
-                            🔗 Siteyi Aç
-                          </Link>
-                        )}
-                        {site.status !== "active" && (
-                          <button
-                            onClick={() => handleActivate(site)}
-                            disabled={activating === site.id}
-                            className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors disabled:opacity-50"
-                          >
-                            🚀 Yayınla
-                          </button>
-                        )}
-                        <div className="border-t border-zinc-700 my-1" />
-                        <button
-                          onClick={() => handleDelete(site.id)}
-                          className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-zinc-700 transition-colors"
-                        >
-                          🗑 Sil
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Stats */}
-                <div className="flex items-center gap-3 mt-3 text-xs text-zinc-500">
-                  {site.is_private && <span>🔒 Gizli</span>}
-                  <span>{site.slides?.length || 0} slide</span>
-                  {site.status === "active" && <span>🌐 /{site.slug}</span>}
-                  {!editRemaining.expired && editRemaining.days <= 3 && (
-                    <span className="text-amber-400">⏰ {editRemaining.text}</span>
+              <div className="p-4 flex flex-col flex-1">
+                {/* Title & Status */}
+                <h3 className="font-semibold text-white text-sm truncate">
+                  {site.recipient_name}&apos;e Özel
+                </h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${st.color}`} />
+                  <span className="text-[11px] text-zinc-500">{st.label}</span>
+                  <span className="text-zinc-700 text-[11px]">·</span>
+                  <span className="text-[11px] text-zinc-600">{site.slides?.length || 0} slide</span>
+                  {site.status === "active" && (
+                    <>
+                      <span className="text-zinc-700 text-[11px]">·</span>
+                      <span className="text-[11px] text-zinc-500 truncate">/{site.slug}</span>
+                    </>
                   )}
                 </div>
 
-                {/* Action Button */}
-                <div className="mt-4">
-                  {site.status === "active" ? (
-                    <Link
-                      href={`/dashboard/editor/${site.id}`}
-                      className="block w-full text-center bg-rose-500/10 text-rose-400 py-2.5 rounded-xl text-sm font-semibold hover:bg-rose-500/20 transition-colors"
-                    >
-                      Siteyi Düzenle
-                    </Link>
-                  ) : site.status === "draft" || site.status === "paid" ? (
-                    <Link
-                      href={`/dashboard/editor/${site.id}`}
-                      className="block w-full text-center bg-rose-500/10 text-rose-400 py-2.5 rounded-xl text-sm font-semibold hover:bg-rose-500/20 transition-colors"
-                    >
-                      Düzenlemeye Devam Et
-                    </Link>
+                {/* Countdown badges */}
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                  {!editRemaining.expired ? (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${editRemaining.days <= 2 ? "bg-amber-500/10 text-amber-400" : "bg-zinc-800 text-zinc-400"
+                      }`}>
+                      ✏️ {editRemaining.text} kaldı
+                    </span>
                   ) : (
-                    <div className="text-center text-xs text-zinc-600 py-2.5">
-                      Süresi dolmuş
-                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-zinc-800 text-zinc-600">
+                      ✏️ Süre doldu
+                    </span>
                   )}
+                  {liveRemaining && !liveRemaining.expired && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${liveRemaining.days <= 30 ? "bg-red-500/10 text-red-400" : "bg-zinc-800 text-zinc-400"
+                      }`}>
+                      🌐 {liveRemaining.text} kaldı
+                    </span>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-auto pt-4">
+                  {/* Yayınla (only for non-active) */}
+                  {site.status !== "active" && (
+                    <button
+                      onClick={() => router.push(`/checkout?siteId=${site.id}&name=${encodeURIComponent(site.recipient_name + "'e Özel")}`)}
+                      className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors"
+                    >
+                      Yayınla
+                    </button>
+                  )}
+
+                  {/* ZIP İndir (only for active) */}
+                  {site.status === "active" && (
+                    <a
+                      href={`/api/download/${site.id}`}
+                      className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors"
+                    >
+                      📦 ZIP İndir
+                    </a>
+                  )}
+
+                  {/* Düzenle (only if edit not expired) */}
+                  {!editRemaining.expired && (
+                    <Link
+                      href={`/dashboard/editor/${site.id}`}
+                      className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                    >
+                      Düzenle
+                    </Link>
+                  )}
+
+                  {/* Sil */}
+                  <button
+                    onClick={() => handleDelete(site.id)}
+                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-500 hover:bg-red-500/10 hover:text-red-400 transition-colors flex-shrink-0"
+                    title="Siteyi Sil"
+                  >
+                    🗑
+                  </button>
                 </div>
               </div>
             </div>
