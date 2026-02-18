@@ -1,4 +1,5 @@
 import type { SlideData } from "@/lib/types";
+import Link from "next/link";
 import TemplateView from "@/components/template/TemplateView";
 
 // Demo sayfası — şablonun nasıl göründüğünü gösteren sabit verili sayfa
@@ -52,12 +53,12 @@ export default function DemoPage() {
   return (
     <div className="relative">
       {/* Anasayfa butonu */}
-      <a
+      <Link
         href="/"
         className="fixed top-4 left-4 z-[200] bg-white/90 backdrop-blur-sm text-gray-800 px-4 py-2 rounded-lg shadow-lg hover:bg-white transition-all text-sm font-semibold border border-gray-200"
       >
         ← Anasayfa
-      </a>
+      </Link>
       <TemplateView
         recipientName="Demo"
         slides={DEMO_SLIDES}

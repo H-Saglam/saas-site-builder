@@ -117,25 +117,29 @@ function CheckoutContent() {
   );
 }
 
-function handlePayment(siteId: string | null, packageType: string) {
+async function handlePayment(siteId: string | null, packageType: "standard" | "premium") {
   if (!siteId) {
     alert("Site bilgisi bulunamadı");
     return;
   }
 
-  // Shopier ayarlanmamışsa bilgi ver
-  const shopierApiKey = process.env.NEXT_PUBLIC_SHOPIER_API_KEY;
-  if (!shopierApiKey || shopierApiKey === "XXXXXXXXXXXX") {
-    alert(
-      `Shopier henüz yapılandırılmamış.\n\nGeliştirme modunda siteyi dashboard'dan "Canlıya Al" butonuyla doğrudan aktifleştirebilirsiniz.\n\nPaket: ${packageType === "premium" ? "Premium (249₺)" : "Standart (149₺)"}`
-    );
-    return;
-  }
+  try {
+    const res = await fetch("/api/shopier-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ siteId, packageType }),
+    });
+    const data = await res.json();
 
-  // Shopier ödeme sayfasına yönlendir
-  // Not: Shopier entegrasyonu için Shopier panel ayarları gerekli
-  const shopierUrl = `https://www.shopier.com/ShowProductNew/products.php?id=${shopierApiKey}&product_type=money_transfer&amount=${packageType === "premium" ? "249" : "149"}&currency=TRY&custom_field_1=${siteId}&custom_field_2=${packageType}`;
-  window.open(shopierUrl, "_blank");
+    if (!res.ok || !data.url) {
+      alert(data.error || "Ödeme oturumu oluşturulamadı");
+      return;
+    }
+
+    window.open(data.url, "_blank", "noopener,noreferrer");
+  } catch {
+    alert("Ödeme başlatılırken bir hata oluştu");
+  }
 }
 
 export default function CheckoutPage() {

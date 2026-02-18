@@ -13,6 +13,36 @@ import path from "path";
   Canlı siteyle birebir aynı HTML/CSS/JS yapısını kullanır.
 */
 
+const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
+
+function escapeHTML(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function sanitizeHexColor(value: string | undefined, fallback: string): string {
+  if (value && HEX_COLOR_REGEX.test(value)) {
+    return value;
+  }
+  return fallback;
+}
+
+function sanitizeMediaUrl(value?: string): string {
+  if (!value) return "";
+
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return "";
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
 function songBadgeHTML(songTitle?: string, songArtist?: string): string {
   if (!songTitle || !songArtist) return "";
   return `
@@ -21,19 +51,24 @@ function songBadgeHTML(songTitle?: string, songArtist?: string): string {
           <span></span><span></span><span></span>
         </div>
         <div class="song-info">
-          <span class="song-title">${songTitle}</span>
-          <span class="artist">${songArtist}</span>
+          <span class="song-title">${escapeHTML(songTitle)}</span>
+          <span class="artist">${escapeHTML(songArtist)}</span>
         </div>
       </div>`;
 }
 
 function generateSlideHTML(slide: SlideData, index: number, site: SiteData): string {
-  const gradient = `linear-gradient(135deg, ${slide.gradient.from}, ${slide.gradient.to})`;
+  const gradientFrom = sanitizeHexColor(slide.gradient?.from, "#2b0a3d");
+  const gradientTo = sanitizeHexColor(slide.gradient?.to, "#511a68");
+  const gradient = `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`;
   const isFirst = index === 0;
   const activeClass = isFirst ? " active" : "";
   const songTitle = site.musicTrack?.title;
   const songArtist = site.musicTrack?.artist;
   const badge = songBadgeHTML(songTitle, songArtist);
+  const safeHeading = escapeHTML(slide.heading || "");
+  const safeDescription = escapeHTML(slide.description || "");
+  const safeRecipientName = escapeHTML(site.recipientName || "");
 
   switch (slide.type) {
     case "cover":
@@ -41,28 +76,35 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData): str
     <section class="slide${activeClass}" style="background:${gradient}">
       ${badge}
       <div class="content">
-        <h1 class="animate-up">${site.recipientName}...</h1>
-        <p class="animate-up delay-1">${slide.description}</p>
+        <h1 class="animate-up">${safeRecipientName}...</h1>
+        <p class="animate-up delay-1">${safeDescription}</p>
         <div class="tap-hint" id="tap-hint">Başlamak için dokun ❤️</div>
       </div>
     </section>`;
 
-    case "photo":
+    case "photo": {
+      const safeImageUrl = sanitizeMediaUrl(slide.imageUrl);
       return `
     <section class="slide${activeClass}" style="background:${gradient}">
       ${badge}
       <div class="content">
         <div class="photo-frame animate-pop">
-          ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.heading}">` : ""}
+          ${safeImageUrl ? `<img src="${safeImageUrl}" alt="${safeHeading}">` : ""}
         </div>
-        <h2 class="animate-up">${slide.heading}</h2>
-        ${slide.description ? `<p class="animate-up delay-1">${slide.description}</p>` : ""}
+        <h2 class="animate-up">${safeHeading}</h2>
+        ${safeDescription ? `<p class="animate-up delay-1">${safeDescription}</p>` : ""}
       </div>
     </section>`;
+    }
 
     case "collage": {
       const imgs = (slide.collageUrls ?? [])
-        .map((url: string, i: number) => `<img src="${url}" class="c-img c-${i + 1} animate-pop delay-${i + 1}" alt="Kolaj ${i + 1}">`)
+        .map((url: string, i: number) => {
+          const safeUrl = sanitizeMediaUrl(url);
+          if (!safeUrl) return "";
+          return `<img src="${safeUrl}" class="c-img c-${i + 1} animate-pop delay-${i + 1}" alt="Kolaj ${i + 1}">`;
+        })
+        .filter(Boolean)
         .join("\n          ");
       return `
     <section class="slide${activeClass}" style="background:${gradient}">
@@ -71,8 +113,8 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData): str
         <div class="collage">
           ${imgs}
         </div>
-        <h2 class="animate-up">${slide.heading}</h2>
-        ${slide.description ? `<p class="animate-up delay-1">${slide.description}</p>` : ""}
+        <h2 class="animate-up">${safeHeading}</h2>
+        ${safeDescription ? `<p class="animate-up delay-1">${safeDescription}</p>` : ""}
       </div>
     </section>`;
     }
@@ -83,28 +125,31 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData): str
       ${badge}
       <div class="content">
         <div class="text-content">
-          <h2 class="animate-up">${slide.heading}</h2>
-          ${slide.description ? `<p class="animate-up delay-1">${slide.description}</p>` : ""}
+          <h2 class="animate-up">${safeHeading}</h2>
+          ${safeDescription ? `<p class="animate-up delay-1">${safeDescription}</p>` : ""}
         </div>
       </div>
     </section>`;
 
-    case "finale":
+    case "finale": {
+      const safeImageUrl = sanitizeMediaUrl(slide.imageUrl);
+      const safePointerText = escapeHTML(slide.handPointerText || "");
       return `
     <section class="slide slide-finale${activeClass}" style="background:${gradient}">
       ${badge}
       <div class="content">
-        ${slide.imageUrl ? `
+        ${safeImageUrl ? `
         <div class="photo-frame animate-pop">
-          <img src="${slide.imageUrl}" alt="Final">
-          ${slide.handPointerText ? `<div class="hand-pointer">${slide.handPointerText}</div>` : ""}
+          <img src="${safeImageUrl}" alt="Final">
+          ${safePointerText ? `<div class="hand-pointer">${safePointerText}</div>` : ""}
         </div>` : ""}
-        <h1 class="animate-up delay-1">${slide.heading}</h1>
-        ${slide.description ? `<p class="animate-up delay-2">${slide.description}</p>` : ""}
+        <h1 class="animate-up delay-1">${safeHeading}</h1>
+        ${safeDescription ? `<p class="animate-up delay-2">${safeDescription}</p>` : ""}
         <button class="replay-btn" onclick="replay()">Başa Dön ↺</button>
       </div>
       <canvas class="confetti-canvas" id="confetti-canvas"></canvas>
     </section>`;
+    }
 
     default:
       return "";
@@ -127,17 +172,18 @@ function generateOfflineHTML(site: SiteData): string {
     .map((slide, index) => generateSlideHTML(slide, index, site))
     .join("\n");
 
-  const musicUrl = site.musicTrack?.fileUrl || "";
+  const musicUrl = sanitizeMediaUrl(site.musicTrack?.fileUrl || "");
   const musicTag = musicUrl
     ? `<audio id="bg-music" src="${musicUrl}" loop preload="auto"></audio>`
     : "";
+  const safeTitle = escapeHTML(site.title || "");
 
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>${site.title}</title>
+  <title>${safeTitle}</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#000}</style>

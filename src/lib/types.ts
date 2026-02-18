@@ -55,7 +55,6 @@ export interface SiteData {
   status: SiteStatus;
   packageType: PackageType;
   isPrivate: boolean;
-  passwordHash: string | null;
   expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -109,7 +108,6 @@ export function siteRowToData(row: SiteRow, musicTrack?: MusicTrack): SiteData {
     status: row.status,
     packageType: row.package_type,
     isPrivate: row.is_private,
-    passwordHash: row.password_hash,
     expiresAt: row.expires_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

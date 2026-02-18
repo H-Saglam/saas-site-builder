@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import bcrypt from "bcryptjs";
 import { getServiceSupabase } from "@/lib/supabase";
-import { siteFormSchema } from "@/lib/validators";
+import { siteFormSchema, siteUpdateSchema } from "@/lib/validators";
 
 // GET — Kullanıcının sitelerini getir (tek site veya tümü)
 export async function GET(request: NextRequest) {
@@ -134,26 +134,24 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { siteId: bodyId, id: altId } = body;
-    const siteId = bodyId || altId;
+    const parsed = siteUpdateSchema.safeParse(body);
 
-    // Strict allowlist — prevent mass assignment of status, package_type, user_id, etc.
-    const ALLOWED_FIELDS = ["title", "recipientName", "slug", "slides", "musicId", "isPrivate", "password", "confirmPassword"];
-    const updateData: Record<string, unknown> = {};
-    for (const key of ALLOWED_FIELDS) {
-      if (body[key] !== undefined) updateData[key] = body[key];
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Geçersiz veri", details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
 
-    if (!siteId) {
-      return NextResponse.json({ error: "Site ID gerekli" }, { status: 400 });
-    }
+    const siteId = parsed.data.siteId || parsed.data.id;
+    if (!siteId) return NextResponse.json({ error: "Site ID gerekli" }, { status: 400 });
 
     const supabase = getServiceSupabase();
 
     // Sahiplik kontrolü ve düzenleme süresi kontrolü (1 hafta)
     const { data: existing } = await supabase
       .from("sites")
-      .select("user_id, created_at")
+      .select("user_id, created_at, slug, is_private, password_hash")
       .eq("id", siteId)
       .single();
 
@@ -173,35 +171,75 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Eğer şifre güncelleniyorsa hash'le
-    if (updateData.password) {
-      updateData.password_hash = await bcrypt.hash(String(updateData.password), 10);
-      delete updateData.password;
-      delete updateData.confirmPassword;
+    // Slug değişiyorsa benzersizlik kontrolü
+    if (parsed.data.slug && parsed.data.slug !== existing.slug) {
+      const { data: slugExists } = await supabase
+        .from("sites")
+        .select("id")
+        .eq("slug", parsed.data.slug)
+        .neq("id", siteId)
+        .maybeSingle();
+
+      if (slugExists) {
+        return NextResponse.json(
+          { error: "Bu URL zaten kullanılıyor" },
+          { status: 409 }
+        );
+      }
     }
 
-    // Slides varsa order ekle
-    if (updateData.slides && Array.isArray(updateData.slides)) {
-      updateData.slides = (updateData.slides as Record<string, unknown>[]).map((slide, index) => ({
+    // Model validasyonu sonrası güvenli update objesi oluştur
+    const updateData: Record<string, unknown> = {};
+    if (parsed.data.title !== undefined) updateData.title = parsed.data.title;
+    if (parsed.data.recipientName !== undefined) updateData.recipient_name = parsed.data.recipientName;
+    if (parsed.data.slug !== undefined) updateData.slug = parsed.data.slug;
+    if (parsed.data.musicId !== undefined) updateData.music_id = parsed.data.musicId;
+
+    if (parsed.data.slides) {
+      updateData.slides = parsed.data.slides.map((slide, index) => ({
         ...slide,
         order: index + 1,
       }));
     }
 
-    // camelCase → snake_case dönüşümü
-    const dbUpdate: Record<string, unknown> = {};
-    if (updateData.title !== undefined) dbUpdate.title = updateData.title;
-    if (updateData.recipientName !== undefined) dbUpdate.recipient_name = updateData.recipientName;
-    if (updateData.slug !== undefined) dbUpdate.slug = updateData.slug;
-    if (updateData.slides !== undefined) dbUpdate.slides = updateData.slides;
-    if (updateData.musicId !== undefined) dbUpdate.music_id = updateData.musicId;
-    if (updateData.isPrivate !== undefined) dbUpdate.is_private = updateData.isPrivate;
-    if (updateData.password_hash !== undefined) dbUpdate.password_hash = updateData.password_hash;
-    dbUpdate.updated_at = new Date().toISOString();
+    const nextIsPrivate = parsed.data.isPrivate ?? existing.is_private;
+    const hasExistingPassword = !!existing.password_hash;
+    const newPassword = parsed.data.password && parsed.data.password.length > 0
+      ? parsed.data.password
+      : null;
+    const hasNewPassword = !!newPassword;
+
+    if (nextIsPrivate && !hasExistingPassword && !hasNewPassword) {
+      return NextResponse.json(
+        { error: "Private site için şifre gerekli" },
+        { status: 400 }
+      );
+    }
+
+    if (!nextIsPrivate && newPassword) {
+      return NextResponse.json(
+        { error: "Public site için şifre gönderilemez" },
+        { status: 400 }
+      );
+    }
+
+    if (parsed.data.isPrivate !== undefined) {
+      updateData.is_private = parsed.data.isPrivate;
+
+      if (!parsed.data.isPrivate) {
+        updateData.password_hash = null;
+      }
+    }
+
+    if (hasNewPassword) {
+      updateData.password_hash = await bcrypt.hash(newPassword, 10);
+    }
+
+    updateData.updated_at = new Date().toISOString();
 
     const { data: site, error } = await supabase
       .from("sites")
-      .update(dbUpdate)
+      .update(updateData)
       .eq("id", siteId)
       .select()
       .single();

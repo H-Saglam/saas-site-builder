@@ -15,12 +15,12 @@ export const slugSchema = z
 // ============================================
 // Slide Validasyonu
 // ============================================
-const gradientSchema = z.object({
+export const gradientSchema = z.object({
   from: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Geçerli hex renk giriniz"),
   to: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Geçerli hex renk giriniz"),
 });
 
-const slideSchema = z.object({
+export const slideSchema = z.object({
   type: z.enum(["cover", "photo", "collage", "text", "finale"]),
   heading: z
     .string()
@@ -91,6 +91,52 @@ export const siteFormSchema = z
     }
   );
 
+export const siteUpdateSchema = z
+  .object({
+    id: z.string().uuid("Geçersiz site ID").optional(),
+    siteId: z.string().uuid("Geçersiz site ID").optional(),
+    title: z
+      .string()
+      .min(2, "Başlık en az 2 karakter olmalı")
+      .max(100, "Başlık en fazla 100 karakter olabilir")
+      .optional(),
+    recipientName: z
+      .string()
+      .min(1, "Alıcı ismi boş olamaz")
+      .max(50, "İsim en fazla 50 karakter olabilir")
+      .optional(),
+    slug: slugSchema.optional(),
+    slides: z
+      .array(slideSchema)
+      .min(3, "En az 3 slide olmalı")
+      .max(12, "En fazla 12 slide olabilir")
+      .optional(),
+    musicId: z.string().min(1, "Bir müzik seçmelisiniz").nullable().optional(),
+    isPrivate: z.boolean().optional(),
+    password: z
+      .string()
+      .min(4, "Şifre en az 4 karakter olmalı")
+      .max(20, "Şifre en fazla 20 karakter olabilir")
+      .optional()
+      .or(z.literal("")),
+    confirmPassword: z.string().optional().or(z.literal("")),
+  })
+  .strict()
+  .refine((data) => !!(data.id || data.siteId), {
+    message: "Site ID gerekli",
+    path: ["siteId"],
+  })
+  .refine(
+    (data) => {
+      if (!data.password) return true;
+      return !data.confirmPassword || data.password === data.confirmPassword;
+    },
+    {
+      message: "Şifreler eşleşmiyor",
+      path: ["confirmPassword"],
+    }
+  );
+
 // ============================================
 // Şifre Doğrulama
 // ============================================
@@ -103,4 +149,5 @@ export const verifyPasswordSchema = z.object({
 // Export Types
 // ============================================
 export type SiteFormValues = z.infer<typeof siteFormSchema>;
+export type SiteUpdateValues = z.infer<typeof siteUpdateSchema>;
 export type VerifyPasswordValues = z.infer<typeof verifyPasswordSchema>;
