@@ -4,9 +4,13 @@ import { SignJWT } from "jose";
 import { getServiceSupabase } from "@/lib/supabase";
 import { verifyPasswordSchema } from "@/lib/validators";
 
-const VERIFY_SECRET = new TextEncoder().encode(
-  process.env.VERIFY_SECRET || "fallback-secret-change-in-production-min32chars!"
-);
+function getVerifySecret() {
+  const secret = process.env.VERIFY_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error("VERIFY_SECRET env var is required and must be at least 32 characters");
+  }
+  return new TextEncoder().encode(secret);
+}
 
 // Basit in-memory rate limiting
 const attempts = new Map<string, { count: number; resetAt: number }>();
@@ -86,7 +90,7 @@ export async function POST(request: NextRequest) {
     const token = await new SignJWT({ slug, verified: true })
       .setProtectedHeader({ alg: "HS256" })
       .setExpirationTime("24h")
-      .sign(VERIFY_SECRET);
+      .sign(getVerifySecret());
 
     // Cookie olarak set et
     const response = NextResponse.json({ success: true });

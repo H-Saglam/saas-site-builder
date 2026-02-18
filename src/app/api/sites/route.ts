@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
     .order("created_at", { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Sites GET error:", error.message);
+    return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 
   return NextResponse.json({ sites: data });
@@ -113,7 +114,8 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("Sites POST error:", error.message);
+      return NextResponse.json({ error: "Site oluşturulamadı" }, { status: 500 });
     }
 
     return NextResponse.json({ site }, { status: 201 });
@@ -132,8 +134,15 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { siteId: bodyId, id: altId, ...updateData } = body;
+    const { siteId: bodyId, id: altId } = body;
     const siteId = bodyId || altId;
+
+    // Strict allowlist — prevent mass assignment of status, package_type, user_id, etc.
+    const ALLOWED_FIELDS = ["title", "recipientName", "slug", "slides", "musicId", "isPrivate", "password", "confirmPassword"];
+    const updateData: Record<string, unknown> = {};
+    for (const key of ALLOWED_FIELDS) {
+      if (body[key] !== undefined) updateData[key] = body[key];
+    }
 
     if (!siteId) {
       return NextResponse.json({ error: "Site ID gerekli" }, { status: 400 });
@@ -156,7 +165,7 @@ export async function PUT(request: NextRequest) {
     const createdAt = new Date(existing.created_at);
     const now = new Date();
     const daysSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-    
+
     if (daysSinceCreation > 7) {
       return NextResponse.json(
         { error: "Düzenleme süresi doldu. Site oluşturulduktan sonra sadece 1 hafta içinde düzenlenebilir." },
@@ -166,14 +175,14 @@ export async function PUT(request: NextRequest) {
 
     // Eğer şifre güncelleniyorsa hash'le
     if (updateData.password) {
-      updateData.password_hash = await bcrypt.hash(updateData.password, 10);
+      updateData.password_hash = await bcrypt.hash(String(updateData.password), 10);
       delete updateData.password;
       delete updateData.confirmPassword;
     }
 
     // Slides varsa order ekle
-    if (updateData.slides) {
-      updateData.slides = updateData.slides.map((slide: Record<string, unknown>, index: number) => ({
+    if (updateData.slides && Array.isArray(updateData.slides)) {
+      updateData.slides = (updateData.slides as Record<string, unknown>[]).map((slide, index) => ({
         ...slide,
         order: index + 1,
       }));
@@ -198,7 +207,8 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("Sites PUT error:", error.message);
+      return NextResponse.json({ error: "Güncelleme başarısız" }, { status: 500 });
     }
 
     return NextResponse.json({ site });
@@ -238,7 +248,8 @@ export async function DELETE(request: NextRequest) {
   const { error } = await supabase.from("sites").delete().eq("id", siteId);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Sites DELETE error:", error.message);
+    return NextResponse.json({ error: "Silme başarısız" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
       .update(orderId || "")
       .digest("hex");
 
-    if (signature && signature !== expectedSignature) {
-      console.error("Geçersiz Shopier imzası");
+    if (!signature || signature !== expectedSignature) {
+      console.error("Geçersiz veya eksik Shopier imzası");
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
     }
 

@@ -38,9 +38,11 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceSupabase();
 
-    // Dosya adı oluştur
-    const ext = file.name.split(".").pop() || "jpg";
-    const fileName = `${userId}/${siteId || "temp"}/${Date.now()}.${ext}`;
+    // Dosya adı oluştur — güvenli extension ve siteId
+    const rawExt = (file.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "");
+    const ext = ["jpg", "jpeg", "png", "webp"].includes(rawExt.toLowerCase()) ? rawExt : "jpg";
+    const safeSiteId = (siteId || "temp").replace(/[^a-zA-Z0-9_-]/g, "");
+    const fileName = `${userId}/${safeSiteId}/${Date.now()}.${ext}`;
 
     // Supabase Storage'a yükle
     const arrayBuffer = await file.arrayBuffer();
