@@ -13,6 +13,16 @@ import path from "path";
   Canlı siteyle birebir aynı HTML/CSS/JS yapısını kullanır.
 */
 
+// Escape user content for safe HTML interpolation
+function esc(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function songBadgeHTML(songTitle?: string, songArtist?: string): string {
   if (!songTitle || !songArtist) return "";
   return `
@@ -21,8 +31,8 @@ function songBadgeHTML(songTitle?: string, songArtist?: string): string {
           <span></span><span></span><span></span>
         </div>
         <div class="song-info">
-          <span class="song-title">${songTitle}</span>
-          <span class="artist">${songArtist}</span>
+          <span class="song-title">${esc(songTitle)}</span>
+          <span class="artist">${esc(songArtist)}</span>
         </div>
       </div>`;
 }

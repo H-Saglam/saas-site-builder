@@ -53,8 +53,9 @@ export function useSlideshow({ totalSlides, onSlideChange }: UseSlideshowOptions
         return; // İlk tıklama sadece müziği başlatır
       }
 
-      const width = window.innerWidth;
-      const x = e.clientX;
+      const rect = containerRef.current?.getBoundingClientRect();
+      const width = rect?.width ?? window.innerWidth;
+      const x = e.clientX - (rect?.left ?? 0);
 
       if (x < width * 0.2) {
         prevSlide();

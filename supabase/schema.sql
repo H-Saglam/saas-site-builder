@@ -87,3 +87,8 @@ INSERT INTO music_library (title, artist, category, file_url, duration_seconds) 
   ('Hüzünlü Keman', 'LoveSite Music', 'melancholic', 'https://example.com/melancholic-violin.mp3', 200),
   ('Enerjik Beat', 'LoveSite Music', 'energetic', 'https://example.com/energetic-beat.mp3', 160)
 ON CONFLICT DO NOTHING;
+
+-- Eski tehlikeli policy'leri kaldır
+DROP POLICY IF EXISTS "Users can insert their own sites" ON sites;
+DROP POLICY IF EXISTS "Users can update their own sites" ON sites;
+DROP POLICY IF EXISTS "Users can delete their own sites" ON sites;
