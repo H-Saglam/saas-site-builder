@@ -32,15 +32,20 @@ export default function CollageSlide({
       )}
       <div className="content">
         <div className="collage">
-          {collageUrls.map((url, index) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={index}
-              src={url}
-              className={`c-img c-${index + 1} animate-pop delay-${index + 1}`}
-              alt={`Kolaj ${index + 1}`}
-            />
-          ))}
+          {collageUrls.map((url, index) => {
+            const normalizedUrl = url?.trim();
+            if (!normalizedUrl) return null;
+
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={index}
+                src={normalizedUrl}
+                className={`c-img c-${index + 1} animate-pop delay-${index + 1}`}
+                alt={`Kolaj ${index + 1}`}
+              />
+            );
+          })}
         </div>
         <h2 className="animate-up">{heading}</h2>
         {description && (

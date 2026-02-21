@@ -4,7 +4,7 @@ import SongBadge from "./SongBadge";
 interface PhotoSlideProps {
   heading: string;
   description: string;
-  imageUrl: string;
+  imageUrl?: string | null;
   imageAlt?: string;
   gradient: SlideGradient;
   songTitle?: string;
@@ -24,6 +24,8 @@ export default function PhotoSlide({
   isActive,
   rotateLeft,
 }: PhotoSlideProps) {
+  const normalizedImageUrl = imageUrl?.trim();
+
   return (
     <section
       className={`slide ${isActive ? "active" : ""}`}
@@ -37,7 +39,7 @@ export default function PhotoSlide({
       <div className="content">
         <div className={`photo-frame animate-pop ${rotateLeft ? "rotate-left" : ""}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt={imageAlt || heading} />
+          {normalizedImageUrl && <img src={normalizedImageUrl} alt={imageAlt || heading} />}
         </div>
         <h2 className="animate-up">{heading}</h2>
         {description && (

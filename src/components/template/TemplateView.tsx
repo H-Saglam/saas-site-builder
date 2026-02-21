@@ -71,7 +71,7 @@ export default function TemplateView({
             key={slideNum}
             heading={slide.heading}
             description={slide.description}
-            imageUrl={slide.imageUrl || ""}
+            imageUrl={slide.imageUrl}
             imageAlt={slide.imageAlt}
             gradient={slide.gradient}
             songTitle={songTitle}
