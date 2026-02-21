@@ -66,7 +66,10 @@ export default async function SitePage({ params }: PageProps) {
   }
 
   // Süre kontrolü (premium için expires_at null olabilir, bu durumda süresiz geçerli)
-  const isExpired = typeof site.expires_at === "string" && new Date(site.expires_at) < new Date();
+  const expirationDate = typeof site.expires_at === "string" ? new Date(site.expires_at) : null;
+  const hasValidExpirationDate =
+    expirationDate !== null && !Number.isNaN(expirationDate.getTime());
+  const isExpired = hasValidExpirationDate && expirationDate < new Date();
   if (isExpired) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white text-center p-6">
