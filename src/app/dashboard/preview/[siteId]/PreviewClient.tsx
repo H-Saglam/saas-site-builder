@@ -4,8 +4,11 @@ import { useRouter } from "next/navigation";
 import type { SiteData } from "@/lib/types";
 import TemplateView from "@/components/template/TemplateView";
 
+const DRAFT_WATERMARK_TEXT = "ÖZEL BİR ANI - ÖNİZLEME";
+
 export default function PreviewClient({ siteData }: { siteData: SiteData }) {
   const router = useRouter();
+  const shouldShowDraftWatermark = siteData.status === "draft";
 
   return (
     <div className="fixed inset-0 z-50 bg-black">
@@ -28,6 +31,22 @@ export default function PreviewClient({ siteData }: { siteData: SiteData }) {
         slides={siteData.slides}
         musicTrack={siteData.musicTrack}
       />
+
+      {shouldShowDraftWatermark && (
+        <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden>
+          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute inset-0 grid grid-cols-2 place-items-center gap-8 p-6 sm:grid-cols-3 sm:gap-10 sm:p-10">
+            {Array.from({ length: 18 }).map((_, index) => (
+              <span
+                key={`draft-watermark-${index}`}
+                className="whitespace-nowrap select-none rotate-[-24deg] text-base font-semibold tracking-[0.28em] text-white/35 sm:text-xl"
+              >
+                {DRAFT_WATERMARK_TEXT}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
