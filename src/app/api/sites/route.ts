@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   // Tüm siteleri getir
   const { data, error } = await supabase
     .from("sites")
-    .select("id, slug, title, recipient_name, status, package_type, is_private, created_at, updated_at, expires_at, slides")
+    .select("id, slug, title, recipient_name, template_id, status, package_type, is_private, created_at, updated_at, expires_at, slides")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, recipientName, slug, slides, musicId, isPrivate, password } = parsed.data;
+    const { title, recipientName, slug, templateId, slides, musicId, isPrivate, password } = parsed.data;
     const supabase = getServiceSupabase();
 
     // Slug benzersizlik kontrolü
@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
         slug,
         title,
         recipient_name: recipientName,
+        template_id: templateId || "valentines",
         slides: orderedSlides,
         music_id: musicId || null,
         status: "draft",
@@ -138,7 +139,7 @@ export async function PUT(request: NextRequest) {
     const siteId = bodyId || altId;
 
     // Strict allowlist — prevent mass assignment of status, package_type, user_id, etc.
-    const ALLOWED_FIELDS = ["title", "recipientName", "slug", "slides", "musicId", "isPrivate", "password", "confirmPassword"];
+    const ALLOWED_FIELDS = ["title", "recipientName", "slug", "templateId", "slides", "musicId", "isPrivate", "password", "confirmPassword"];
     const updateData: Record<string, unknown> = {};
     for (const key of ALLOWED_FIELDS) {
       if (body[key] !== undefined) updateData[key] = body[key];
@@ -193,6 +194,7 @@ export async function PUT(request: NextRequest) {
     if (updateData.title !== undefined) dbUpdate.title = updateData.title;
     if (updateData.recipientName !== undefined) dbUpdate.recipient_name = updateData.recipientName;
     if (updateData.slug !== undefined) dbUpdate.slug = updateData.slug;
+    if (updateData.templateId !== undefined) dbUpdate.template_id = updateData.templateId;
     if (updateData.slides !== undefined) dbUpdate.slides = updateData.slides;
     if (updateData.musicId !== undefined) dbUpdate.music_id = updateData.musicId;
     if (updateData.isPrivate !== undefined) dbUpdate.is_private = updateData.isPrivate;

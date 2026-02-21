@@ -49,9 +49,9 @@ export const siteFormSchema = z
       .max(100, "Başlık en fazla 100 karakter olabilir"),
     recipientName: z
       .string()
-      .min(1, "Alıcı ismi boş olamaz")
       .max(50, "İsim en fazla 50 karakter olabilir"),
     slug: slugSchema,
+    templateId: z.string().default("valentines"),
     slides: z
       .array(slideSchema)
       .min(3, "En az 3 slide olmalı")
