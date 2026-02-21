@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import type { SlideData, SlideFormData, MusicTrack } from "@/lib/types";
 import { GRADIENT_PRESETS, MUSIC_CATEGORIES, siteRowToData } from "@/lib/types";
-import { TEMPLATES } from "@/lib/templates";
+import { TEMPLATES, type TemplateEditorFieldId } from "@/lib/templates";
 import TemplateView from "@/components/template/TemplateView";
 
 const DEFAULT_TEMPLATE_ID = "valentines";
@@ -32,6 +32,20 @@ type TemplateFormValues = {
   mainTitle: string;
   paragraph: string;
   musicId: string;
+};
+
+const TEMPLATE_FIELD_TO_FORM_KEY: Record<TemplateEditorFieldId, keyof TemplateFormValues> = {
+  coverImage: "coverImageUrl",
+  mainTitle: "mainTitle",
+  paragraph: "paragraph",
+  musicId: "musicId",
+};
+
+const REQUIRED_FIELD_MESSAGES: Record<TemplateEditorFieldId, string> = {
+  coverImage: "Kapak fotoğrafı zorunlu.",
+  mainTitle: "Ana başlık zorunlu.",
+  paragraph: "Paragraf zorunlu.",
+  musicId: "Bir müzik seçmelisiniz.",
 };
 
 function normalizeTemplateId(candidate: string | null | undefined): string {
@@ -150,7 +164,6 @@ export default function EditSitePage() {
     watch,
     setValue,
     trigger,
-    setError,
     clearErrors,
     formState: { errors },
   } = useForm<TemplateFormValues>({
@@ -184,6 +197,21 @@ export default function EditSitePage() {
     if (template?.editorFields?.length) return template.editorFields;
     return TEMPLATES.find((item) => item.id === DEFAULT_TEMPLATE_ID)?.editorFields ?? [];
   }, [template]);
+  const requiredFieldIds = useMemo(
+    () => new Set(templateFields.filter((field) => field.required).map((field) => field.id)),
+    [templateFields]
+  );
+  const requiredValidationFields = useMemo<(keyof TemplateFormValues)[]>(
+    () =>
+      templateFields
+        .filter((field) => field.required)
+        .map((field) => TEMPLATE_FIELD_TO_FORM_KEY[field.id]),
+    [templateFields]
+  );
+  const coverImageRequired = requiredFieldIds.has("coverImage");
+  const mainTitleRequired = requiredFieldIds.has("mainTitle");
+  const paragraphRequired = requiredFieldIds.has("paragraph");
+  const musicRequired = requiredFieldIds.has("musicId");
   const mainTitleValue = watch("mainTitle");
   const paragraphValue = watch("paragraph");
   const coverImageUrlValue = watch("coverImageUrl");
@@ -300,17 +328,11 @@ export default function EditSitePage() {
     }
     setSaving(true);
     try {
-      const isTemplateValid = await trigger(["mainTitle", "paragraph", "musicId"]);
+      const isTemplateValid =
+        requiredValidationFields.length > 0
+          ? await trigger(requiredValidationFields)
+          : true;
       if (!isTemplateValid) {
-        setSaving(false);
-        return;
-      }
-
-      if (!coverImageFile && !coverImageUrlValue) {
-        setError("coverImageUrl", {
-          type: "required",
-          message: "Kapak fotoğrafı zorunlu.",
-        });
         setSaving(false);
         return;
       }
@@ -393,17 +415,19 @@ export default function EditSitePage() {
     ? musicTracks
     : musicTracks.filter((t) => t.category === selectedCategory);
   const contentFields = templateFields.filter((field) => field.id !== "musicId");
-  const requiresMusic = templateFields.some((field) => field.id === "musicId");
+  const coverImageProvided = Boolean(coverImageFile || coverImageUrlValue);
+  const hasMissingRequiredTemplateField =
+    (coverImageRequired && !coverImageProvided) ||
+    (mainTitleRequired && !mainTitleValue.trim()) ||
+    (paragraphRequired && !paragraphValue.trim()) ||
+    (musicRequired && !selectedMusicId);
   const saveDisabled =
     saving ||
     (!isNewSite && editExpired) ||
     !title.trim() ||
     !recipientName.trim() ||
     !slug.trim() ||
-    !mainTitleValue.trim() ||
-    !paragraphValue.trim() ||
-    (!coverImageFile && !coverImageUrlValue) ||
-    (requiresMusic && !selectedMusicId);
+    hasMissingRequiredTemplateField;
 
   if (loading) {
     return (
@@ -647,7 +671,9 @@ export default function EditSitePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <input
                 type="hidden"
-                {...register("musicId", { required: "Bir müzik seçmelisiniz." })}
+                {...register("musicId", {
+                  required: musicRequired ? REQUIRED_FIELD_MESSAGES.musicId : false,
+                })}
               />
               {selectedCategory === "all" ? (
                 // Group by category
@@ -757,7 +783,15 @@ export default function EditSitePage() {
                           </button>
                         )}
                       </div>
-                      <input type="hidden" {...register("coverImageUrl")} />
+                      <input
+                        type="hidden"
+                        {...register("coverImageUrl", {
+                          validate: (value) =>
+                            !coverImageRequired ||
+                            Boolean(value || coverImageFile) ||
+                            REQUIRED_FIELD_MESSAGES.coverImage,
+                        })}
+                      />
                       {errors.coverImageUrl && (
                         <p className="text-xs text-red-600 mt-1.5">{errors.coverImageUrl.message}</p>
                       )}
@@ -772,7 +806,9 @@ export default function EditSitePage() {
                         {field.label}
                       </label>
                       <input
-                        {...register("mainTitle", { required: "Ana başlık zorunlu." })}
+                        {...register("mainTitle", {
+                          required: mainTitleRequired ? REQUIRED_FIELD_MESSAGES.mainTitle : false,
+                        })}
                         placeholder={field.placeholder}
                         className="w-full bg-muted border border-border rounded-lg px-3 py-2.5 text-foreground focus:border-primary focus:ring-2 focus:ring-ring/20 outline-none transition-all"
                       />
@@ -790,7 +826,9 @@ export default function EditSitePage() {
                         {field.label}
                       </label>
                       <textarea
-                        {...register("paragraph", { required: "Paragraf zorunlu." })}
+                        {...register("paragraph", {
+                          required: paragraphRequired ? REQUIRED_FIELD_MESSAGES.paragraph : false,
+                        })}
                         rows={5}
                         placeholder={field.placeholder}
                         className="w-full bg-muted border border-border rounded-lg px-3 py-2.5 text-foreground focus:border-primary focus:ring-2 focus:ring-ring/20 outline-none transition-all resize-y"
