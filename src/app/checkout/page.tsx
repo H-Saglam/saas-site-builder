@@ -1,13 +1,109 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
+
+type PackageType = "standard" | "premium";
 
 function CheckoutContent() {
+  const router = useRouter();
   const params = useSearchParams();
   const siteId = params.get("siteId");
   const siteName = params.get("name") || "Site";
+  const [isWaiting, setIsWaiting] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null);
+  const redirectStartedRef = useRef(false);
+
+  const checkSiteStatus = useCallback(async () => {
+    if (!siteId || redirectStartedRef.current) return;
+
+    try {
+      const res = await fetch(`/api/sites/${siteId}`, { cache: "no-store" });
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (data?.site?.status === "active") {
+        redirectStartedRef.current = true;
+        router.push("/dashboard?payment=success");
+      }
+    } catch {}
+  }, [siteId, router]);
+
+  useEffect(() => {
+    if (!isWaiting || !siteId) return;
+
+    void checkSiteStatus();
+    const intervalId = setInterval(() => {
+      void checkSiteStatus();
+    }, 4000);
+
+    return () => clearInterval(intervalId);
+  }, [isWaiting, siteId, checkSiteStatus]);
+
+  function handlePayment(packageType: PackageType) {
+    if (!siteId) {
+      alert("Site bilgisi bulunamadı");
+      return;
+    }
+
+    const shopierApiKey = process.env.NEXT_PUBLIC_SHOPIER_API_KEY;
+    if (!shopierApiKey || shopierApiKey === "XXXXXXXXXXXX") {
+      alert(
+        `Shopier henüz yapılandırılmamış.\n\nGeliştirme modunda siteyi dashboard'dan "Canlıya Al" butonuyla doğrudan aktifleştirebilirsiniz.\n\nPaket: ${packageType === "premium" ? "Premium (249₺)" : "Standart (149₺)"}`
+      );
+      return;
+    }
+
+    const amount = packageType === "premium" ? "249" : "149";
+    const shopierUrl = `https://www.shopier.com/ShowProductNew/products.php?id=${shopierApiKey}&product_type=money_transfer&amount=${amount}&currency=TRY&custom_field_1=${siteId}&custom_field_2=${packageType}`;
+    window.open(shopierUrl, "_blank", "noopener,noreferrer");
+
+    setSelectedPackage(packageType);
+    setIsWaiting(true);
+  }
+
+  if (isWaiting) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+        <div className="max-w-xl w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
+          <div className="w-14 h-14 rounded-full bg-zinc-800 mx-auto mb-4 flex items-center justify-center">
+            <Loader2 className="h-7 w-7 text-rose-500 animate-spin" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Ödeme Bekleniyor</h1>
+          <p className="text-zinc-400 text-sm mb-5">
+            Shopier penceresinde ödemenizi tamamladığınızda bu ekran otomatik olarak yenilenir.
+          </p>
+          <p className="text-zinc-300 text-sm mb-6">
+            Seçilen paket:{" "}
+            <span className="font-semibold text-white">
+              {selectedPackage === "premium" ? "Premium" : "Standart"}
+            </span>
+          </p>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            <button
+              onClick={() => void checkSiteStatus()}
+              className="w-full bg-white text-zinc-900 py-2.5 rounded-xl font-semibold hover:bg-zinc-100 transition-colors"
+            >
+              Durumu Şimdi Kontrol Et
+            </button>
+            <button
+              onClick={() => setIsWaiting(false)}
+              className="w-full bg-zinc-800 text-zinc-100 py-2.5 rounded-xl font-semibold hover:bg-zinc-700 transition-colors"
+            >
+              Paketlere Geri Dön
+            </button>
+          </div>
+
+          <Link href="/dashboard" className="inline-block mt-5 text-sm text-rose-500 hover:underline">
+            ← Dashboard&apos;a Dön
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
@@ -54,7 +150,7 @@ function CheckoutContent() {
             </ul>
 
             <button
-              onClick={() => handlePayment(siteId, "standard")}
+              onClick={() => handlePayment("standard")}
               className="w-full bg-white text-zinc-900 py-3 rounded-xl font-semibold hover:bg-zinc-100 transition-colors"
             >
               Standart Satın Al
@@ -95,7 +191,7 @@ function CheckoutContent() {
             </ul>
 
             <button
-              onClick={() => handlePayment(siteId, "premium")}
+              onClick={() => handlePayment("premium")}
               className="w-full bg-rose-500 text-white py-3 rounded-xl font-semibold hover:bg-rose-600 transition-colors"
             >
               Premium Satın Al
@@ -115,27 +211,6 @@ function CheckoutContent() {
       </div>
     </div>
   );
-}
-
-function handlePayment(siteId: string | null, packageType: string) {
-  if (!siteId) {
-    alert("Site bilgisi bulunamadı");
-    return;
-  }
-
-  // Shopier ayarlanmamışsa bilgi ver
-  const shopierApiKey = process.env.NEXT_PUBLIC_SHOPIER_API_KEY;
-  if (!shopierApiKey || shopierApiKey === "XXXXXXXXXXXX") {
-    alert(
-      `Shopier henüz yapılandırılmamış.\n\nGeliştirme modunda siteyi dashboard'dan "Canlıya Al" butonuyla doğrudan aktifleştirebilirsiniz.\n\nPaket: ${packageType === "premium" ? "Premium (249₺)" : "Standart (149₺)"}`
-    );
-    return;
-  }
-
-  // Shopier ödeme sayfasına yönlendir
-  // Not: Shopier entegrasyonu için Shopier panel ayarları gerekli
-  const shopierUrl = `https://www.shopier.com/ShowProductNew/products.php?id=${shopierApiKey}&product_type=money_transfer&amount=${packageType === "premium" ? "249" : "149"}&currency=TRY&custom_field_1=${siteId}&custom_field_2=${packageType}`;
-  window.open(shopierUrl, "_blank");
 }
 
 export default function CheckoutPage() {
