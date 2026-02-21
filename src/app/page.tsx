@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { TEMPLATES } from "@/lib/templates";
+import AnimatedBackground from "@/components/AnimatedBackground";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-zinc-950 font-[var(--font-outfit)]">
+    <div className="relative min-h-screen bg-zinc-950 font-[var(--font-outfit)]">
+      <AnimatedBackground />
+
+      <div className="relative z-10">
       {/* Navigation */}
       <nav className="flex items-center justify-between px-6 py-5 md:px-12 border-b border-zinc-800/50">
         <div className="text-xl font-bold text-white tracking-tight">💝 Özel Bir Anı</div>
@@ -234,6 +238,7 @@ export default function Home() {
       <footer className="border-t border-zinc-800/50 py-8 px-6 text-center text-zinc-600 text-sm">
         <p>&copy; 2026 Özel Bir Anı. Tüm hakları saklıdır.</p>
       </footer>
+      </div>
     </div>
   );
 }
