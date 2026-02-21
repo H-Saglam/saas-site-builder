@@ -13,34 +13,15 @@ import path from "path";
   Canlı siteyle birebir aynı HTML/CSS/JS yapısını kullanır.
 */
 
-const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
-
-function escapeHTML(value: string): string {
-  return value
+// Escape user content for safe HTML interpolation
+function esc(str: string): string {
+  if (!str) return "";
+  return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-function sanitizeHexColor(value: string | undefined, fallback: string): string {
-  if (value && HEX_COLOR_REGEX.test(value)) {
-    return value;
-  }
-  return fallback;
-}
-
-function sanitizeMediaUrl(value?: string): string {
-  if (!value) return "";
-
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return "";
-    return url.toString();
-  } catch {
-    return "";
-  }
 }
 
 function songBadgeHTML(songTitle?: string, songArtist?: string): string {
@@ -51,24 +32,19 @@ function songBadgeHTML(songTitle?: string, songArtist?: string): string {
           <span></span><span></span><span></span>
         </div>
         <div class="song-info">
-          <span class="song-title">${escapeHTML(songTitle)}</span>
-          <span class="artist">${escapeHTML(songArtist)}</span>
+          <span class="song-title">${esc(songTitle)}</span>
+          <span class="artist">${esc(songArtist)}</span>
         </div>
       </div>`;
 }
 
-function generateSlideHTML(slide: SlideData, index: number, site: SiteData): string {
-  const gradientFrom = sanitizeHexColor(slide.gradient?.from, "#2b0a3d");
-  const gradientTo = sanitizeHexColor(slide.gradient?.to, "#511a68");
-  const gradient = `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`;
+function generateSlideHTML(slide: SlideData, index: number, site: SiteData, urlToLocalMap: Record<string, string>): string {
+  const gradient = `linear-gradient(135deg, ${slide.gradient.from}, ${slide.gradient.to})`;
   const isFirst = index === 0;
   const activeClass = isFirst ? " active" : "";
   const songTitle = site.musicTrack?.title;
   const songArtist = site.musicTrack?.artist;
   const badge = songBadgeHTML(songTitle, songArtist);
-  const safeHeading = escapeHTML(slide.heading || "");
-  const safeDescription = escapeHTML(slide.description || "");
-  const safeRecipientName = escapeHTML(site.recipientName || "");
 
   switch (slide.type) {
     case "cover":
@@ -76,23 +52,23 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData): str
     <section class="slide${activeClass}" style="background:${gradient}">
       ${badge}
       <div class="content">
-        <h1 class="animate-up">${safeRecipientName}...</h1>
-        <p class="animate-up delay-1">${safeDescription}</p>
+        <h1 class="animate-up">${site.recipientName}...</h1>
+        <p class="animate-up delay-1">${slide.description}</p>
         <div class="tap-hint" id="tap-hint">Başlamak için dokun ❤️</div>
       </div>
     </section>`;
 
     case "photo": {
-      const safeImageUrl = sanitizeMediaUrl(slide.imageUrl);
+      const localUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
       return `
     <section class="slide${activeClass}" style="background:${gradient}">
       ${badge}
       <div class="content">
         <div class="photo-frame animate-pop">
-          ${safeImageUrl ? `<img src="${safeImageUrl}" alt="${safeHeading}">` : ""}
+          ${localUrl ? `<img src="${localUrl}" alt="${esc(slide.heading)}">` : ""}
         </div>
-        <h2 class="animate-up">${safeHeading}</h2>
-        ${safeDescription ? `<p class="animate-up delay-1">${safeDescription}</p>` : ""}
+        <h2 class="animate-up">${esc(slide.heading)}</h2>
+        ${slide.description ? `<p class="animate-up delay-1">${esc(slide.description)}</p>` : ""}
       </div>
     </section>`;
     }
@@ -100,11 +76,9 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData): str
     case "collage": {
       const imgs = (slide.collageUrls ?? [])
         .map((url: string, i: number) => {
-          const safeUrl = sanitizeMediaUrl(url);
-          if (!safeUrl) return "";
-          return `<img src="${safeUrl}" class="c-img c-${i + 1} animate-pop delay-${i + 1}" alt="Kolaj ${i + 1}">`;
+          const localUrl = urlToLocalMap[url] || url;
+          return `<img src="${localUrl}" class="c-img c-${i + 1} animate-pop delay-${i + 1}" alt="Kolaj ${i + 1}">`;
         })
-        .filter(Boolean)
         .join("\n          ");
       return `
     <section class="slide${activeClass}" style="background:${gradient}">
@@ -113,8 +87,8 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData): str
         <div class="collage">
           ${imgs}
         </div>
-        <h2 class="animate-up">${safeHeading}</h2>
-        ${safeDescription ? `<p class="animate-up delay-1">${safeDescription}</p>` : ""}
+        <h2 class="animate-up">${esc(slide.heading)}</h2>
+        ${slide.description ? `<p class="animate-up delay-1">${esc(slide.description)}</p>` : ""}
       </div>
     </section>`;
     }
@@ -125,26 +99,25 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData): str
       ${badge}
       <div class="content">
         <div class="text-content">
-          <h2 class="animate-up">${safeHeading}</h2>
-          ${safeDescription ? `<p class="animate-up delay-1">${safeDescription}</p>` : ""}
+          <h2 class="animate-up">${esc(slide.heading)}</h2>
+          ${slide.description ? `<p class="animate-up delay-1">${esc(slide.description)}</p>` : ""}
         </div>
       </div>
     </section>`;
 
     case "finale": {
-      const safeImageUrl = sanitizeMediaUrl(slide.imageUrl);
-      const safePointerText = escapeHTML(slide.handPointerText || "");
+      const localUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
       return `
     <section class="slide slide-finale${activeClass}" style="background:${gradient}">
       ${badge}
       <div class="content">
-        ${safeImageUrl ? `
+        ${localUrl ? `
         <div class="photo-frame animate-pop">
-          <img src="${safeImageUrl}" alt="Final">
-          ${safePointerText ? `<div class="hand-pointer">${safePointerText}</div>` : ""}
+          <img src="${localUrl}" alt="Final">
+          ${slide.handPointerText ? `<div class="hand-pointer">${esc(slide.handPointerText)}</div>` : ""}
         </div>` : ""}
-        <h1 class="animate-up delay-1">${safeHeading}</h1>
-        ${safeDescription ? `<p class="animate-up delay-2">${safeDescription}</p>` : ""}
+        <h1 class="animate-up delay-1">${esc(slide.heading)}</h1>
+        ${slide.description ? `<p class="animate-up delay-2">${esc(slide.description)}</p>` : ""}
         <button class="replay-btn" onclick="replay()">Başa Dön ↺</button>
       </div>
       <canvas class="confetti-canvas" id="confetti-canvas"></canvas>
@@ -167,23 +140,22 @@ function generateProgressBarHTML(totalSlides: number): string {
   return `    <div class="progress-container">\n${bars.join("\n")}\n    </div>`;
 }
 
-function generateOfflineHTML(site: SiteData): string {
+function generateOfflineHTML(site: SiteData, urlToLocalMap: Record<string, string>): string {
   const slidesHTML = site.slides
-    .map((slide, index) => generateSlideHTML(slide, index, site))
+    .map((slide, index) => generateSlideHTML(slide, index, site, urlToLocalMap))
     .join("\n");
 
-  const musicUrl = sanitizeMediaUrl(site.musicTrack?.fileUrl || "");
+  const musicUrl = site.musicTrack?.fileUrl || "";
   const musicTag = musicUrl
     ? `<audio id="bg-music" src="${musicUrl}" loop preload="auto"></audio>`
     : "";
-  const safeTitle = escapeHTML(site.title || "");
 
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>${safeTitle}</title>
+  <title>${esc(site.title)}</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#000}</style>
@@ -251,7 +223,7 @@ function generateOfflineJS(totalSlides: number, hasMusic: boolean): string {
     if (isFirstTap && current === 1) {
       isFirstTap = false;
       if (tapHint) tapHint.style.display = 'none';
-      ${hasMusic ? `try { audio.play(); } catch(err) {}` : ""}
+      ${hasMusic ? `try { window.audioStarted = true; audio.play(); } catch(err) {}` : ""}
       return;
     }
 
@@ -270,7 +242,7 @@ function generateOfflineJS(totalSlides: number, hasMusic: boolean): string {
     if (isFirstTap && current === 1) {
       isFirstTap = false;
       if (tapHint) tapHint.style.display = 'none';
-      ${hasMusic ? `try { audio.play(); } catch(err) {}` : ""}
+      ${hasMusic ? `try { window.audioStarted = true; audio.play(); } catch(err) {}` : ""}
       return;
     }
     if (diff < -50) showSlide(current + 1);
@@ -284,7 +256,7 @@ function generateOfflineJS(totalSlides: number, hasMusic: boolean): string {
       if (isFirstTap && current === 1) {
         isFirstTap = false;
         if (tapHint) tapHint.style.display = 'none';
-        ${hasMusic ? `try { audio.play(); } catch(err) {}` : ""}
+        ${hasMusic ? `try { window.audioStarted = true; audio.play(); } catch(err) {}` : ""}
         return;
       }
       showSlide(current + 1);
@@ -300,6 +272,14 @@ function generateOfflineJS(totalSlides: number, hasMusic: boolean): string {
     isFirstTap = true;
     if (tapHint) tapHint.style.display = '';
     showSlide(1);
+    ${hasMusic ? `
+    if (window.audioStarted) {
+      try {
+        audio.currentTime = 0;
+        audio.play();
+      } catch(err) {}
+    }
+    ` : ""}
   };
 
   // Simple confetti
@@ -394,10 +374,67 @@ export async function GET(
   }
 
   const hasMusic = !!(site.musicTrack?.fileUrl);
-
-  // ZIP oluştur
   const zip = new JSZip();
-  zip.file("index.html", generateOfflineHTML(site));
+
+  // URL extraction for ZIP physical download
+  const uniqueUrls = new Set<string>();
+  for (const slide of site.slides) {
+    if (slide.imageUrl && slide.imageUrl.trim() !== "") {
+      uniqueUrls.add(slide.imageUrl);
+    }
+    if (slide.collageUrls) {
+      for (const curl of slide.collageUrls) {
+        if (curl && curl.trim() !== "") {
+          uniqueUrls.add(curl);
+        }
+      }
+    }
+  }
+
+  // Download logic & Map Population
+  const urlToLocalMap: Record<string, string> = {};
+  if (uniqueUrls.size > 0) {
+    const imagesFolder = zip.folder("images");
+
+    // Fetch all in parallel
+    const downloadPromises = Array.from(uniqueUrls).map(async (url, index) => {
+      try {
+        // SSRF Protection: Only allow valid https URLs
+        if (!url.startsWith("https://")) {
+          console.warn(`Skipping non-https or invalid URL: ${url}`);
+          return;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
+
+        const arrayBuffer = await response.arrayBuffer();
+
+        // Attempt to guess extension from URL or content-type
+        let ext = "jpg";
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("png")) ext = "png";
+        else if (contentType && contentType.includes("gif")) ext = "gif";
+        else if (contentType && contentType.includes("webp")) ext = "webp";
+        else if (url.toLowerCase().endsWith(".png")) ext = "png";
+        else if (url.toLowerCase().endsWith(".gif")) ext = "gif";
+        else if (url.toLowerCase().endsWith(".webp")) ext = "webp";
+
+        const filename = `img_${index + 1}.${ext}`;
+
+        if (imagesFolder) {
+          imagesFolder.file(filename, arrayBuffer);
+          urlToLocalMap[url] = `images/${filename}`;
+        }
+      } catch (err) {
+        console.error("Image download error for ZIP:", err);
+      }
+    });
+
+    await Promise.allSettled(downloadPromises);
+  }
+
+  zip.file("index.html", generateOfflineHTML(site, urlToLocalMap));
   zip.file("styles.css", cssContent);
   zip.file("script.js", generateOfflineJS(site.slides.length, hasMusic));
 
@@ -411,3 +448,4 @@ export async function GET(
     },
   });
 }
+

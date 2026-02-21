@@ -71,6 +71,8 @@ export function FinaleSlide({
   isActive,
   onReplay,
 }: FinaleSlideProps) {
+  const normalizedImageUrl = imageUrl?.trim();
+
   return (
     <section
       className={`slide slide-finale ${isActive ? "active" : ""}`}
@@ -82,10 +84,10 @@ export function FinaleSlide({
         <SongBadge title={songTitle} artist={songArtist} />
       )}
       <div className="content">
-        {imageUrl && (
+        {normalizedImageUrl && (
           <div className="photo-frame animate-pop">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageUrl} alt="Final" />
+            <img src={normalizedImageUrl} alt="Final" />
             {handPointerText && (
               <div className="hand-pointer">{handPointerText}</div>
             )}

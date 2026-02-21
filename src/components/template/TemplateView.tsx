@@ -15,6 +15,8 @@ interface TemplateViewProps {
   slides: SlideData[];
   musicTrack?: MusicTrack | null;
   musicUrl?: string | null;
+  /** When true, sizes to parent container instead of full viewport (for inline previews) */
+  embedded?: boolean;
 }
 
 export default function TemplateView({
@@ -22,6 +24,7 @@ export default function TemplateView({
   slides,
   musicTrack,
   musicUrl,
+  embedded = false,
 }: TemplateViewProps) {
   const totalSlides = slides.length;
 
@@ -68,7 +71,7 @@ export default function TemplateView({
             key={slideNum}
             heading={slide.heading}
             description={slide.description}
-            imageUrl={slide.imageUrl || ""}
+            imageUrl={slide.imageUrl}
             imageAlt={slide.imageAlt}
             gradient={slide.gradient}
             songTitle={songTitle}
@@ -128,7 +131,7 @@ export default function TemplateView({
   return (
     <div
       ref={containerRef}
-      className="template-container"
+      className={`template-container${embedded ? " template-container--embedded" : ""}`}
       onClick={handleClick}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}

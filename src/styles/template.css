@@ -524,6 +524,113 @@
 }
 
 /* ============================================
+   Embedded Preview Mode
+   Sizes to parent container instead of viewport
+   ============================================ */
+.template-container--embedded {
+  height: 100%;
+  width: 100%;
+}
+
+.template-container--embedded .slides-container {
+  height: 100%;
+  width: 100%;
+}
+
+.template-container--embedded .slide {
+  height: 100%;
+  width: 100%;
+}
+
+.template-container--embedded .photo-frame {
+  width: 70%;
+  max-width: none;
+}
+
+.template-container--embedded .content .collage {
+  width: 70%;
+  max-width: none;
+  height: 50%;
+}
+
+.template-container--embedded h1 {
+  font-size: 1.4rem;
+}
+
+.template-container--embedded h2 {
+  font-size: 1.1rem;
+}
+
+.template-container--embedded p {
+  font-size: 0.75rem;
+}
+
+.template-container--embedded .tap-hint {
+  font-size: 0.65rem;
+}
+
+.template-container--embedded .navigation-hint {
+  font-size: 0.6rem;
+}
+
+.template-container--embedded .song-badge {
+  top: 20px;
+  left: 10px;
+  padding: 4px 8px;
+}
+
+.template-container--embedded .song-title {
+  font-size: 0.55rem;
+}
+
+.template-container--embedded .artist {
+  font-size: 0.5rem;
+}
+
+.template-container--embedded .equalizer {
+  height: 10px;
+  margin-right: 6px;
+}
+
+.template-container--embedded .equalizer span {
+  width: 2px;
+}
+
+.template-container--embedded .replay-btn {
+  padding: 8px 16px;
+  font-size: 0.7rem;
+}
+
+.template-container--embedded .hand-pointer {
+  font-size: 0.6rem;
+  padding: 4px 8px;
+}
+
+.template-container--embedded .slide-finale h1 {
+  font-size: 1.2rem;
+}
+
+.template-container--embedded .slide-finale p {
+  font-size: 0.7rem;
+}
+
+.template-container--embedded .slide-finale .photo-frame {
+  width: 60%;
+}
+
+.template-container--embedded .slide-text h2 {
+  font-size: 1.2rem;
+}
+
+.template-container--embedded .slide-text p {
+  font-size: 0.8rem;
+}
+
+.template-container--embedded .c-img {
+  width: 55%;
+}
+
+/* ============================================
    Mobile Tweaks
    ============================================ */
 @media (max-width: 600px) {

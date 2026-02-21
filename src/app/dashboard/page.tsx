@@ -1,14 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Plus,
+  Search,
+  ExternalLink,
+  Eye,
+  Clock,
+  Globe,
+  Download,
+  Pencil,
+  Trash2,
+  Gift,
+  FolderOpen,
+} from "lucide-react";
 
 interface SiteItem {
   id: string;
   slug: string;
   title: string;
   recipient_name: string;
+  template_id: string;
   status: string;
   package_type: string;
   is_private: boolean;
@@ -51,12 +65,14 @@ function getTimeRemaining(createdAt: string, durationDays: number) {
   return { expired: false, text: `${hours} saat`, days };
 }
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const [sites, setSites] = useState<SiteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paymentSuccess = searchParams.get("payment") === "success";
 
   useEffect(() => {
     fetch("/api/sites")
@@ -68,15 +84,21 @@ export default function DashboardPage() {
       .catch(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!paymentSuccess) return;
 
+    const timer = setTimeout(() => {
+      router.replace("/dashboard", { scroll: false });
+    }, 3500);
+
+    return () => clearTimeout(timer);
+  }, [paymentSuccess, router]);
 
   const handleDelete = async (siteId: string) => {
     if (!confirm("Bu siteyi silmek istediğinize emin misiniz?")) return;
     const res = await fetch(`/api/sites?siteId=${siteId}`, { method: "DELETE" });
     if (res.ok) setSites(sites.filter((s) => s.id !== siteId));
   };
-
-
 
   const filteredSites = sites.filter((site) => {
     if (filter === "active" && site.status !== "active") return false;
@@ -94,8 +116,6 @@ export default function DashboardPage() {
     return true;
   });
 
-
-
   const filters: { key: FilterType; label: string }[] = [
     { key: "all", label: "Tüm Projeler" },
     { key: "active", label: "Aktif" },
@@ -105,64 +125,74 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex items-center gap-3 text-zinc-500">
-          <div className="w-5 h-5 border-2 border-zinc-600 border-t-zinc-400 rounded-full animate-spin" />
-          Yükleniyor...
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pt-8">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-card border border-border rounded-xl overflow-hidden animate-pulse">
+            <div className="h-36 bg-muted" />
+            <div className="p-4 space-y-3">
+              <div className="h-4 bg-muted rounded w-3/4" />
+              <div className="h-3 bg-muted rounded w-1/2" />
+              <div className="flex gap-2 pt-2">
+                <div className="h-8 bg-muted rounded-lg flex-1" />
+                <div className="h-8 bg-muted rounded-lg flex-1" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
 
   return (
     <div>
+      {paymentSuccess && (
+        <div className="fixed top-6 right-6 z-50 bg-emerald-600 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg">
+          Ödeme başarılı. Siteniz canlıya alındı.
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Hikayeleriniz</h1>
-          <p className="text-zinc-400 text-sm mt-1">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">Hikayeleriniz</h1>
+          <p className="text-muted-foreground text-sm mt-1">
             Dijital hikaye sitelerinizi yönetin ve yeni projeler oluşturun.
           </p>
         </div>
         <div className="flex items-center gap-3">
           {/* Search */}
           <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Projelerde ara..."
-              className="pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-700 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500/50 w-56"
+              className="pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 w-56"
             />
           </div>
           {/* Create Button */}
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("open-template-picker"))}
-            className="bg-rose-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-rose-600 transition-colors flex items-center gap-2 whitespace-nowrap shadow-sm"
+            className="bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-accent transition-colors flex items-center gap-2 whitespace-nowrap shadow-sm"
           >
-            <span className="text-lg leading-none">+</span> Yeni Site
+            <Plus className="w-4 h-4" /> Yeni Site
           </button>
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-zinc-800 pb-px">
+      {/* Filter Tabs — Pill / Segment Control */}
+      <div className="bg-muted p-1 rounded-xl inline-flex mb-6">
         {filters.map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${filter === f.key
-              ? "text-white"
-              : "text-zinc-500 hover:text-zinc-300"
+            className={`px-4 py-2 text-sm font-medium transition-all rounded-lg ${filter === f.key
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
               }`}
           >
             {f.label}
-            {filter === f.key && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-rose-500 rounded-full" />
-            )}
           </button>
         ))}
       </div>
@@ -172,15 +202,13 @@ export default function DashboardPage() {
         {/* "Start a New Story" Card */}
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-template-picker"))}
-          className="group bg-zinc-900 rounded-2xl border border-dashed border-zinc-800 hover:border-zinc-600 transition-all flex flex-col items-center justify-center text-center p-8"
+          className="group bg-card rounded-xl border-2 border-dashed border-border hover:border-primary transition-all flex flex-col items-center justify-center text-center p-8"
         >
-          <div className="w-12 h-12 rounded-xl bg-zinc-800 group-hover:bg-rose-500/10 flex items-center justify-center mb-4 transition-all group-hover:scale-110">
-            <svg className="w-5 h-5 text-zinc-500 group-hover:text-rose-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+          <div className="w-12 h-12 rounded-xl bg-muted group-hover:bg-primary-light flex items-center justify-center mb-4 transition-all group-hover:scale-110">
+            <Plus className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
-          <h3 className="font-medium text-zinc-300 group-hover:text-white transition-colors text-sm mb-1">Yeni Hikaye Oluştur</h3>
-          <p className="text-[11px] text-zinc-600 max-w-[160px] leading-relaxed">
+          <h3 className="font-medium text-foreground group-hover:text-primary transition-colors text-sm mb-1">Yeni Hikaye Oluştur</h3>
+          <p className="text-[11px] text-muted-foreground max-w-[160px] leading-relaxed">
             Bir şablon seçerek başlayın
           </p>
         </button>
@@ -192,22 +220,22 @@ export default function DashboardPage() {
           const editRemaining = getTimeRemaining(site.created_at, 7);
           const liveRemaining = site.status === "active" ? getTimeRemaining(site.created_at, 365) : null;
 
-          const statusConfig: Record<string, { color: string; label: string }> = {
-            active: { color: "bg-emerald-400", label: "Yayında" },
-            draft: { color: "bg-zinc-500", label: "Taslak" },
-            paid: { color: "bg-blue-400", label: "Ödendi" },
-            expired: { color: "bg-red-400", label: "Süresi Doldu" },
+          const statusConfig: Record<string, { classes: string; label: string }> = {
+            active: { classes: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200", label: "Yayında" },
+            draft: { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: "Taslak" },
+            paid: { classes: "bg-blue-50 text-blue-600 ring-1 ring-blue-200", label: "Ödendi" },
+            expired: { classes: "bg-red-50 text-red-600 ring-1 ring-red-200", label: "Süresi Doldu" },
           };
-          const st = statusConfig[site.status] || { color: "bg-zinc-500", label: site.status };
+          const st = statusConfig[site.status] || { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: site.status };
 
           return (
             <div
               key={site.id}
-              className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800/50 hover:border-zinc-700 transition-all flex flex-col"
+              className="bg-card border border-border rounded-xl shadow-sm overflow-hidden hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 flex flex-col"
             >
               {/* Cover — clickable */}
               <div
-                className="relative h-32 overflow-hidden flex-shrink-0 cursor-pointer group/cover"
+                className="relative h-36 overflow-hidden flex-shrink-0 cursor-pointer group/cover"
                 onClick={() => {
                   if (site.status === "active") {
                     window.open(`/${site.slug}`, "_blank");
@@ -224,20 +252,24 @@ export default function DashboardPage() {
                   />
                 ) : (
                   <div
-                    className="w-full h-full flex items-center justify-center text-3xl"
+                    className="w-full h-full flex items-center justify-center"
                     style={{
                       background: gradient
                         ? `linear-gradient(135deg, ${gradient.from}, ${gradient.to})`
                         : "linear-gradient(135deg, #667eea, #764ba2)",
                     }}
                   >
-                    💝
+                    <Gift className="w-8 h-8 text-white/70" />
                   </div>
                 )}
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/0 group-hover/cover:bg-black/30 transition-colors flex items-center justify-center">
-                  <span className="text-white text-xs font-semibold bg-black/50 px-3 py-1.5 rounded-full opacity-0 group-hover/cover:opacity-100 transition-opacity backdrop-blur-sm">
-                    {site.status === "active" ? "🔗 Siteyi Aç" : "👁 Önizleme"}
+                  <span className="text-white text-xs font-semibold bg-black/50 px-3 py-1.5 rounded-full opacity-0 group-hover/cover:opacity-100 transition-opacity backdrop-blur-sm flex items-center gap-1.5">
+                    {site.status === "active" ? (
+                      <><ExternalLink className="w-3 h-3" /> Siteyi Aç</>
+                    ) : (
+                      <><Eye className="w-3 h-3" /> Önizleme</>
+                    )}
                   </span>
                 </div>
               </div>
@@ -245,18 +277,18 @@ export default function DashboardPage() {
               {/* Content */}
               <div className="p-4 flex flex-col flex-1">
                 {/* Title & Status */}
-                <h3 className="font-semibold text-white text-sm truncate">
+                <h3 className="font-semibold text-foreground text-sm truncate">
                   {site.recipient_name}&apos;e Özel
                 </h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${st.color}`} />
-                  <span className="text-[11px] text-zinc-500">{st.label}</span>
-                  <span className="text-zinc-700 text-[11px]">·</span>
-                  <span className="text-[11px] text-zinc-600">{site.slides?.length || 0} slide</span>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${st.classes}`}>
+                    {st.label}
+                  </span>
+                  <span className="text-muted-foreground text-[11px]">{site.slides?.length || 0} slide</span>
                   {site.status === "active" && (
                     <>
-                      <span className="text-zinc-700 text-[11px]">·</span>
-                      <span className="text-[11px] text-zinc-500 truncate">/{site.slug}</span>
+                      <span className="text-border text-[11px]">·</span>
+                      <span className="text-[11px] text-muted-foreground truncate">/{site.slug}</span>
                     </>
                   )}
                 </div>
@@ -264,19 +296,19 @@ export default function DashboardPage() {
                 {/* Countdown badges */}
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
                   {!editRemaining.expired ? (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${editRemaining.days <= 2 ? "bg-amber-500/10 text-amber-400" : "bg-zinc-800 text-zinc-400"
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${editRemaining.days <= 2 ? "bg-amber-50 text-amber-600" : "bg-muted text-muted-foreground"
                       }`}>
-                      ✏️ {editRemaining.text} kaldı
+                      <Clock className="w-3 h-3" /> {editRemaining.text} kaldı
                     </span>
                   ) : (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-zinc-800 text-zinc-600">
-                      ✏️ Süre doldu
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground inline-flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Süre doldu
                     </span>
                   )}
                   {liveRemaining && !liveRemaining.expired && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${liveRemaining.days <= 30 ? "bg-red-500/10 text-red-400" : "bg-zinc-800 text-zinc-400"
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${liveRemaining.days <= 30 ? "bg-red-50 text-red-600" : "bg-muted text-muted-foreground"
                       }`}>
-                      🌐 {liveRemaining.text} kaldı
+                      <Globe className="w-3 h-3" /> {liveRemaining.text} kaldı
                     </span>
                   )}
                 </div>
@@ -287,7 +319,7 @@ export default function DashboardPage() {
                   {site.status !== "active" && (
                     <button
                       onClick={() => router.push(`/checkout?siteId=${site.id}&name=${encodeURIComponent(site.recipient_name + "'e Özel")}`)}
-                      className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors"
+                      className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-accent transition-colors"
                     >
                       Yayınla
                     </button>
@@ -297,9 +329,9 @@ export default function DashboardPage() {
                   {site.status === "active" && (
                     <a
                       href={`/api/download/${site.id}`}
-                      className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors"
+                      className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-accent transition-colors inline-flex items-center justify-center gap-1.5"
                     >
-                      📦 ZIP İndir
+                      <Download className="w-3.5 h-3.5" /> ZIP İndir
                     </a>
                   )}
 
@@ -307,19 +339,19 @@ export default function DashboardPage() {
                   {!editRemaining.expired && (
                     <Link
                       href={`/dashboard/editor/${site.id}`}
-                      className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                      className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:bg-border hover:text-foreground transition-colors inline-flex items-center justify-center gap-1.5"
                     >
-                      Düzenle
+                      <Pencil className="w-3.5 h-3.5" /> Düzenle
                     </Link>
                   )}
 
                   {/* Sil */}
                   <button
                     onClick={() => handleDelete(site.id)}
-                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-500 hover:bg-red-500/10 hover:text-red-400 transition-colors flex-shrink-0"
+                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-colors flex-shrink-0"
                     title="Siteyi Sil"
                   >
-                    🗑
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -331,11 +363,20 @@ export default function DashboardPage() {
       {/* Empty filtered state */}
       {filteredSites.length === 0 && sites.length > 0 && (
         <div className="text-center py-12">
-          <p className="text-zinc-500 text-sm">
+          <FolderOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground text-sm">
             {search ? `"${search}" ile eşleşen proje bulunamadı.` : "Bu kategoride proje yok."}
           </p>
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="pt-8 text-sm text-muted-foreground">Yükleniyor...</div>}>
+      <DashboardPageContent />
+    </Suspense>
   );
 }
