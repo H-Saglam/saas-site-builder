@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
     const status = params.get("status"); // "1" = başarılı
     const signature = params.get("signature");
     const siteId = params.get("custom_field_1"); // Site ID'miz
-    const packageType = params.get("custom_field_2") || "standard"; // Paket tipi
+    const packageTypeParam = params.get("custom_field_2") || "standard"; // Paket tipi
+    const packageType = packageTypeParam === "premium" ? "premium" : "standard";
 
     // İmza doğrulama
     const apiSecret = process.env.SHOPIER_API_SECRET;
@@ -41,15 +42,21 @@ export async function POST(request: NextRequest) {
     // Ödeme başarılı — siteyi aktif et
     const supabase = getServiceSupabase();
 
-    const expiresAt = new Date();
-    expiresAt.setFullYear(expiresAt.getFullYear() + 1); // 1 yıl
+    const expiresAt =
+      packageType === "premium"
+        ? null
+        : (() => {
+            const standardExpiry = new Date();
+            standardExpiry.setFullYear(standardExpiry.getFullYear() + 1);
+            return standardExpiry.toISOString();
+          })();
 
     const { error } = await supabase
       .from("sites")
       .update({
         status: "active",
         package_type: packageType,
-        expires_at: expiresAt.toISOString(),
+        expires_at: expiresAt,
         updated_at: new Date().toISOString(),
       })
       .eq("id", siteId);
