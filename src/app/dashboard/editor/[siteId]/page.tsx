@@ -141,8 +141,6 @@ export default function EditSitePage() {
   const [loading, setLoading] = useState(!isNewSite);
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [editExpired, setEditExpired] = useState(false);
-  const [daysRemaining, setDaysRemaining] = useState<number>(0);
   const [templateId, setTemplateId] = useState(templateParam ?? DEFAULT_TEMPLATE_ID);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [coverImagePreviewUrl, setCoverImagePreviewUrl] = useState("");
@@ -262,16 +260,6 @@ export default function EditSitePage() {
         setValue("mainTitle", templateValues.mainTitle);
         setValue("paragraph", templateValues.paragraph);
         setValue("musicId", s.musicId ?? "");
-
-        // Düzenleme süresi kontrolü (1 hafta)
-        if (raw.created_at) {
-          const createdAt = new Date(raw.created_at);
-          const now = new Date();
-          const daysSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-          const remaining = Math.max(0, 7 - daysSinceCreation);
-          setDaysRemaining(Math.ceil(remaining));
-          setEditExpired(daysSinceCreation > 7);
-        }
       } catch {
         alert("Site yüklenirken hata oluştu.");
         router.push("/dashboard");
@@ -423,7 +411,6 @@ export default function EditSitePage() {
     (musicRequired && !selectedMusicId);
   const saveDisabled =
     saving ||
-    (!isNewSite && editExpired) ||
     !title.trim() ||
     !recipientName.trim() ||
     !slug.trim() ||
@@ -489,7 +476,7 @@ export default function EditSitePage() {
               className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-lg hover:bg-accent disabled:opacity-50 transition-colors font-medium"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {!isNewSite && editExpired ? "Süre Doldu" : isNewSite ? "Oluştur" : "Kaydet"}
+              {isNewSite ? "Oluştur" : "Kaydet"}
             </button>
           </div>
         </div>
@@ -507,30 +494,6 @@ export default function EditSitePage() {
                 <p className="font-semibold">Şablondan oluşturuluyor</p>
                 <p className="text-sm mt-1">
                   <span className="font-medium">{template.name}</span> şablonu için sabit alanlar gösteriliyor.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Edit mode alerts */}
-          {!isNewSite && editExpired && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl flex items-start gap-3">
-              <Info className="h-5 w-5 mt-0.5 shrink-0" />
-              <div>
-                <p className="font-semibold">Düzenleme süresi doldu</p>
-                <p className="text-sm mt-1">
-                  Site oluşturulduktan sonra sadece 1 hafta içinde düzenlenebilir. Artık bu siteyi güncelleyemezsiniz.
-                </p>
-              </div>
-            </div>
-          )}
-          {!isNewSite && !editExpired && daysRemaining <= 3 && daysRemaining > 0 && (
-            <div className="bg-amber-50 border border-amber-200 text-amber-700 px-5 py-4 rounded-xl flex items-start gap-3">
-              <Info className="h-5 w-5 mt-0.5 shrink-0" />
-              <div>
-                <p className="font-semibold">Düzenleme süreniz yakında doluyor</p>
-                <p className="text-sm mt-1">
-                  Bu siteyi düzenleyebilmeniz için {daysRemaining} gün kaldı. Değişiklikleri en kısa sürede kaydetmeyi unutmayın.
                 </p>
               </div>
             </div>

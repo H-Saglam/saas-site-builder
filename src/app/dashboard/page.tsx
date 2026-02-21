@@ -218,6 +218,7 @@ function DashboardPageContent() {
           const gradient = site.slides?.[0]?.gradient;
           const coverImage = site.slides?.[0]?.imageUrl;
           const editRemaining = getTimeRemaining(site.created_at, 7);
+          const canEdit = site.status === "draft" || !editRemaining.expired;
           const liveRemaining = site.status === "active" ? getTimeRemaining(site.created_at, 365) : null;
 
           const statusConfig: Record<string, { classes: string; label: string }> = {
@@ -295,7 +296,11 @@ function DashboardPageContent() {
 
                 {/* Countdown badges */}
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
-                  {!editRemaining.expired ? (
+                  {site.status === "draft" ? (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground inline-flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Taslak: süresiz düzenleme
+                    </span>
+                  ) : !editRemaining.expired ? (
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${editRemaining.days <= 2 ? "bg-amber-50 text-amber-600" : "bg-muted text-muted-foreground"
                       }`}>
                       <Clock className="w-3 h-3" /> {editRemaining.text} kaldı
@@ -336,7 +341,7 @@ function DashboardPageContent() {
                   )}
 
                   {/* Düzenle (only if edit not expired) */}
-                  {!editRemaining.expired && (
+                  {canEdit && (
                     <Link
                       href={`/dashboard/editor/${site.id}`}
                       className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:bg-border hover:text-foreground transition-colors inline-flex items-center justify-center gap-1.5"
