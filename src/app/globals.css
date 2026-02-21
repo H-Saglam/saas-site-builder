@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   --background: #09090b;
   --foreground: #fafafa;
@@ -16,4 +20,94 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes slide-wipe {
+  0% {
+    transform-origin: left;
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  40% {
+    transform-origin: left;
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  40.001% {
+    transform-origin: right;
+    transform: scaleX(1);
+  }
+  80% {
+    transform-origin: right;
+    transform: scaleX(0);
+    opacity: 1;
+  }
+  85% {
+    opacity: 0;
+  }
+  100% {
+    transform-origin: right;
+    transform: scaleX(0);
+    opacity: 0;
+  }
+}
+
+.animate-slide-wipe {
+  animation: slide-wipe 8s ease-in-out infinite;
+  transform: scaleX(0);
+  opacity: 0;
+}
+
+@keyframes rhythmic-bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(0.8);
+  }
+  30% {
+    transform: scale(1.3);
+  }
+  50% {
+    transform: scale(1);
+  }
+}
+
+.animate-rhythmic-bounce {
+  animation: rhythmic-bounce 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite;
+}
+
+@keyframes insta-pop {
+  0% {
+    transform: scale(0.2);
+  }
+  40% {
+    transform: scale(1.3);
+  }
+  60% {
+    transform: scale(0.9);
+  }
+  80% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-insta-pop {
+  animation: insta-pop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-wipe,
+  .animate-rhythmic-bounce,
+  .animate-insta-pop {
+    animation: none !important;
+    transform: scale(1);
+    opacity: 1;
+  }
 }

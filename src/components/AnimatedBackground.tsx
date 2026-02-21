@@ -44,11 +44,11 @@ class Particle {
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, globalAlpha: number) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fillStyle = this.color;
-    ctx.globalAlpha = this.opacity;
+    ctx.globalAlpha = this.opacity * globalAlpha;
     ctx.fill();
     ctx.globalAlpha = 1.0;
   }
@@ -66,6 +66,7 @@ export default function AnimatedBackground() {
 
     let animationId: number;
     let particles: Particle[] = [];
+    let scrollAlpha = 0;
 
     function resize() {
       canvas!.width = window.innerWidth;
@@ -81,12 +82,23 @@ export default function AnimatedBackground() {
       }
     }
 
+    function updateScrollAlpha() {
+      const vh = window.innerHeight;
+      // Hidden on first screen, fade in between 60%-100% of first viewport
+      scrollAlpha = Math.min(Math.max((window.scrollY - vh * 0.6) / (vh * 0.4), 0), 1);
+    }
+
     function animate() {
+      updateScrollAlpha();
       ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
-      for (const p of particles) {
-        p.update(canvas!.width, canvas!.height);
-        p.draw(ctx!);
+
+      if (scrollAlpha > 0.01) {
+        for (const p of particles) {
+          p.update(canvas!.width, canvas!.height);
+          p.draw(ctx!, scrollAlpha);
+        }
       }
+
       animationId = requestAnimationFrame(animate);
     }
 
