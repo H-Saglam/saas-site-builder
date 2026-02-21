@@ -15,6 +15,7 @@ import path from "path";
 
 // Escape user content for safe HTML interpolation
 function esc(str: string): string {
+  if (!str) return "";
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -378,9 +379,15 @@ export async function GET(
   // URL extraction for ZIP physical download
   const uniqueUrls = new Set<string>();
   for (const slide of site.slides) {
-    if (slide.imageUrl) uniqueUrls.add(slide.imageUrl);
+    if (slide.imageUrl && slide.imageUrl.trim() !== "") {
+      uniqueUrls.add(slide.imageUrl);
+    }
     if (slide.collageUrls) {
-      for (const curl of slide.collageUrls) uniqueUrls.add(curl);
+      for (const curl of slide.collageUrls) {
+        if (curl && curl.trim() !== "") {
+          uniqueUrls.add(curl);
+        }
+      }
     }
   }
 
@@ -388,11 +395,16 @@ export async function GET(
   const urlToLocalMap: Record<string, string> = {};
   if (uniqueUrls.size > 0) {
     const imagesFolder = zip.folder("images");
-    let imgCounter = 1;
 
     // Fetch all in parallel
-    const downloadPromises = Array.from(uniqueUrls).map(async (url) => {
+    const downloadPromises = Array.from(uniqueUrls).map(async (url, index) => {
       try {
+        // SSRF Protection: Only allow valid https URLs
+        if (!url.startsWith("https://")) {
+          console.warn(`Skipping non-https or invalid URL: ${url}`);
+          return;
+        }
+
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
 
@@ -408,7 +420,7 @@ export async function GET(
         else if (url.toLowerCase().endsWith(".gif")) ext = "gif";
         else if (url.toLowerCase().endsWith(".webp")) ext = "webp";
 
-        const filename = `img_${imgCounter++}.${ext}`;
+        const filename = `img_${index + 1}.${ext}`;
 
         if (imagesFolder) {
           imagesFolder.file(filename, arrayBuffer);
