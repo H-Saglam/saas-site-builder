@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS sites (
   slug TEXT UNIQUE NOT NULL,
   title TEXT NOT NULL,
   recipient_name TEXT NOT NULL,
+  template_id TEXT NOT NULL DEFAULT 'valentines',
   slides JSONB NOT NULL DEFAULT '[]',
   music_id UUID REFERENCES music_library(id) ON DELETE SET NULL,
   status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'paid', 'active', 'expired')),

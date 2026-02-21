@@ -22,6 +22,7 @@ interface SiteItem {
   slug: string;
   title: string;
   recipient_name: string;
+  template_id: string;
   status: string;
   package_type: string;
   is_private: boolean;
@@ -168,11 +169,10 @@ export default function DashboardPage() {
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`px-4 py-2 text-sm font-medium transition-all rounded-lg ${
-              filter === f.key
+            className={`px-4 py-2 text-sm font-medium transition-all rounded-lg ${filter === f.key
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             {f.label}
           </button>
@@ -278,9 +278,8 @@ export default function DashboardPage() {
                 {/* Countdown badges */}
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
                   {!editRemaining.expired ? (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${
-                      editRemaining.days <= 2 ? "bg-amber-50 text-amber-600" : "bg-muted text-muted-foreground"
-                    }`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${editRemaining.days <= 2 ? "bg-amber-50 text-amber-600" : "bg-muted text-muted-foreground"
+                      }`}>
                       <Clock className="w-3 h-3" /> {editRemaining.text} kaldı
                     </span>
                   ) : (
@@ -289,9 +288,8 @@ export default function DashboardPage() {
                     </span>
                   )}
                   {liveRemaining && !liveRemaining.expired && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${
-                      liveRemaining.days <= 30 ? "bg-red-50 text-red-600" : "bg-muted text-muted-foreground"
-                    }`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${liveRemaining.days <= 30 ? "bg-red-50 text-red-600" : "bg-muted text-muted-foreground"
+                      }`}>
                       <Globe className="w-3 h-3" /> {liveRemaining.text} kaldı
                     </span>
                   )}

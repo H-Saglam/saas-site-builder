@@ -49,6 +49,7 @@ export interface SiteData {
   slug: string;
   title: string;
   recipientName: string;
+  templateId: string;
   slides: SlideData[];
   musicId: string | null;
   musicTrack?: MusicTrack;
@@ -71,6 +72,7 @@ export interface SiteRow {
   slug: string;
   title: string;
   recipient_name: string;
+  template_id: string;
   slides: SlideData[];
   music_id: string | null;
   status: SiteStatus;
@@ -103,6 +105,7 @@ export function siteRowToData(row: SiteRow, musicTrack?: MusicTrack): SiteData {
     slug: row.slug,
     title: row.title,
     recipientName: row.recipient_name,
+    templateId: row.template_id,
     slides: row.slides,
     musicId: row.music_id,
     musicTrack,
