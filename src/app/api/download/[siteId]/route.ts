@@ -15,6 +15,7 @@ import path from "path";
 
 // Escape user content for safe HTML interpolation
 function esc(str: string): string {
+  if (!str) return "";
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -37,7 +38,7 @@ function songBadgeHTML(songTitle?: string, songArtist?: string): string {
       </div>`;
 }
 
-function generateSlideHTML(slide: SlideData, index: number, site: SiteData): string {
+function generateSlideHTML(slide: SlideData, index: number, site: SiteData, urlToLocalMap: Record<string, string>): string {
   const gradient = `linear-gradient(135deg, ${slide.gradient.from}, ${slide.gradient.to})`;
   const isFirst = index === 0;
   const activeClass = isFirst ? " active" : "";
@@ -57,22 +58,27 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData): str
       </div>
     </section>`;
 
-    case "photo":
+    case "photo": {
+      const localUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
       return `
     <section class="slide${activeClass}" style="background:${gradient}">
       ${badge}
       <div class="content">
         <div class="photo-frame animate-pop">
-          ${slide.imageUrl ? `<img src="${slide.imageUrl}" alt="${slide.heading}">` : ""}
+          ${localUrl ? `<img src="${localUrl}" alt="${esc(slide.heading)}">` : ""}
         </div>
-        <h2 class="animate-up">${slide.heading}</h2>
-        ${slide.description ? `<p class="animate-up delay-1">${slide.description}</p>` : ""}
+        <h2 class="animate-up">${esc(slide.heading)}</h2>
+        ${slide.description ? `<p class="animate-up delay-1">${esc(slide.description)}</p>` : ""}
       </div>
     </section>`;
+    }
 
     case "collage": {
       const imgs = (slide.collageUrls ?? [])
-        .map((url: string, i: number) => `<img src="${url}" class="c-img c-${i + 1} animate-pop delay-${i + 1}" alt="Kolaj ${i + 1}">`)
+        .map((url: string, i: number) => {
+          const localUrl = urlToLocalMap[url] || url;
+          return `<img src="${localUrl}" class="c-img c-${i + 1} animate-pop delay-${i + 1}" alt="Kolaj ${i + 1}">`;
+        })
         .join("\n          ");
       return `
     <section class="slide${activeClass}" style="background:${gradient}">
@@ -81,8 +87,8 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData): str
         <div class="collage">
           ${imgs}
         </div>
-        <h2 class="animate-up">${slide.heading}</h2>
-        ${slide.description ? `<p class="animate-up delay-1">${slide.description}</p>` : ""}
+        <h2 class="animate-up">${esc(slide.heading)}</h2>
+        ${slide.description ? `<p class="animate-up delay-1">${esc(slide.description)}</p>` : ""}
       </div>
     </section>`;
     }
@@ -93,28 +99,30 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData): str
       ${badge}
       <div class="content">
         <div class="text-content">
-          <h2 class="animate-up">${slide.heading}</h2>
-          ${slide.description ? `<p class="animate-up delay-1">${slide.description}</p>` : ""}
+          <h2 class="animate-up">${esc(slide.heading)}</h2>
+          ${slide.description ? `<p class="animate-up delay-1">${esc(slide.description)}</p>` : ""}
         </div>
       </div>
     </section>`;
 
-    case "finale":
+    case "finale": {
+      const localUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
       return `
     <section class="slide slide-finale${activeClass}" style="background:${gradient}">
       ${badge}
       <div class="content">
-        ${slide.imageUrl ? `
+        ${localUrl ? `
         <div class="photo-frame animate-pop">
-          <img src="${slide.imageUrl}" alt="Final">
-          ${slide.handPointerText ? `<div class="hand-pointer">${slide.handPointerText}</div>` : ""}
+          <img src="${localUrl}" alt="Final">
+          ${slide.handPointerText ? `<div class="hand-pointer">${esc(slide.handPointerText)}</div>` : ""}
         </div>` : ""}
-        <h1 class="animate-up delay-1">${slide.heading}</h1>
-        ${slide.description ? `<p class="animate-up delay-2">${slide.description}</p>` : ""}
+        <h1 class="animate-up delay-1">${esc(slide.heading)}</h1>
+        ${slide.description ? `<p class="animate-up delay-2">${esc(slide.description)}</p>` : ""}
         <button class="replay-btn" onclick="replay()">Başa Dön ↺</button>
       </div>
       <canvas class="confetti-canvas" id="confetti-canvas"></canvas>
     </section>`;
+    }
 
     default:
       return "";
@@ -132,9 +140,9 @@ function generateProgressBarHTML(totalSlides: number): string {
   return `    <div class="progress-container">\n${bars.join("\n")}\n    </div>`;
 }
 
-function generateOfflineHTML(site: SiteData): string {
+function generateOfflineHTML(site: SiteData, urlToLocalMap: Record<string, string>): string {
   const slidesHTML = site.slides
-    .map((slide, index) => generateSlideHTML(slide, index, site))
+    .map((slide, index) => generateSlideHTML(slide, index, site, urlToLocalMap))
     .join("\n");
 
   const musicUrl = site.musicTrack?.fileUrl || "";
@@ -147,7 +155,7 @@ function generateOfflineHTML(site: SiteData): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>${site.title}</title>
+  <title>${esc(site.title)}</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#000}</style>
@@ -215,7 +223,7 @@ function generateOfflineJS(totalSlides: number, hasMusic: boolean): string {
     if (isFirstTap && current === 1) {
       isFirstTap = false;
       if (tapHint) tapHint.style.display = 'none';
-      ${hasMusic ? `try { audio.play(); } catch(err) {}` : ""}
+      ${hasMusic ? `try { window.audioStarted = true; audio.play(); } catch(err) {}` : ""}
       return;
     }
 
@@ -234,7 +242,7 @@ function generateOfflineJS(totalSlides: number, hasMusic: boolean): string {
     if (isFirstTap && current === 1) {
       isFirstTap = false;
       if (tapHint) tapHint.style.display = 'none';
-      ${hasMusic ? `try { audio.play(); } catch(err) {}` : ""}
+      ${hasMusic ? `try { window.audioStarted = true; audio.play(); } catch(err) {}` : ""}
       return;
     }
     if (diff < -50) showSlide(current + 1);
@@ -248,7 +256,7 @@ function generateOfflineJS(totalSlides: number, hasMusic: boolean): string {
       if (isFirstTap && current === 1) {
         isFirstTap = false;
         if (tapHint) tapHint.style.display = 'none';
-        ${hasMusic ? `try { audio.play(); } catch(err) {}` : ""}
+        ${hasMusic ? `try { window.audioStarted = true; audio.play(); } catch(err) {}` : ""}
         return;
       }
       showSlide(current + 1);
@@ -264,6 +272,14 @@ function generateOfflineJS(totalSlides: number, hasMusic: boolean): string {
     isFirstTap = true;
     if (tapHint) tapHint.style.display = '';
     showSlide(1);
+    ${hasMusic ? `
+    if (window.audioStarted) {
+      try {
+        audio.currentTime = 0;
+        audio.play();
+      } catch(err) {}
+    }
+    ` : ""}
   };
 
   // Simple confetti
@@ -358,10 +374,67 @@ export async function GET(
   }
 
   const hasMusic = !!(site.musicTrack?.fileUrl);
-
-  // ZIP oluştur
   const zip = new JSZip();
-  zip.file("index.html", generateOfflineHTML(site));
+
+  // URL extraction for ZIP physical download
+  const uniqueUrls = new Set<string>();
+  for (const slide of site.slides) {
+    if (slide.imageUrl && slide.imageUrl.trim() !== "") {
+      uniqueUrls.add(slide.imageUrl);
+    }
+    if (slide.collageUrls) {
+      for (const curl of slide.collageUrls) {
+        if (curl && curl.trim() !== "") {
+          uniqueUrls.add(curl);
+        }
+      }
+    }
+  }
+
+  // Download logic & Map Population
+  const urlToLocalMap: Record<string, string> = {};
+  if (uniqueUrls.size > 0) {
+    const imagesFolder = zip.folder("images");
+
+    // Fetch all in parallel
+    const downloadPromises = Array.from(uniqueUrls).map(async (url, index) => {
+      try {
+        // SSRF Protection: Only allow valid https URLs
+        if (!url.startsWith("https://")) {
+          console.warn(`Skipping non-https or invalid URL: ${url}`);
+          return;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
+
+        const arrayBuffer = await response.arrayBuffer();
+
+        // Attempt to guess extension from URL or content-type
+        let ext = "jpg";
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("png")) ext = "png";
+        else if (contentType && contentType.includes("gif")) ext = "gif";
+        else if (contentType && contentType.includes("webp")) ext = "webp";
+        else if (url.toLowerCase().endsWith(".png")) ext = "png";
+        else if (url.toLowerCase().endsWith(".gif")) ext = "gif";
+        else if (url.toLowerCase().endsWith(".webp")) ext = "webp";
+
+        const filename = `img_${index + 1}.${ext}`;
+
+        if (imagesFolder) {
+          imagesFolder.file(filename, arrayBuffer);
+          urlToLocalMap[url] = `images/${filename}`;
+        }
+      } catch (err) {
+        console.error("Image download error for ZIP:", err);
+      }
+    });
+
+    await Promise.allSettled(downloadPromises);
+  }
+
+  zip.file("index.html", generateOfflineHTML(site, urlToLocalMap));
   zip.file("styles.css", cssContent);
   zip.file("script.js", generateOfflineJS(site.slides.length, hasMusic));
 
@@ -375,3 +448,4 @@ export async function GET(
     },
   });
 }
+
