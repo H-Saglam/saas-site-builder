@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heart Turn and Vanish</title>
+<style>
+  body {
+    background: #09090b;
+    margin: 0;
+    min-height: 250vh; /* Extra height to test scrolling */
+    color: #fafafa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  /* --- Background Container --- */
+  #heart-scroll-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    overflow: hidden;
+    
+    /* Scroll variable updated by JS (0 to 1) */
+    --hcb-scroll: 0;
+    
+    /* Keep the large size */
+    --size: clamp(300px, 50vw, 700px);
+    perspective: 1500px;
+  }
+
+  /* Animation scene */
+  #heart-scroll-bg .scene {
+    width: var(--size);
+    height: calc(var(--size) * 1.15); 
+    position: relative;
+    transform-style: preserve-3d;
+    /* Moves up slightly as you scroll */
+    transform: translateY(calc(var(--hcb-scroll) * -100px));
+  }
+
+  /* The Heart Layer */
+  #heart-scroll-bg .layer-heart {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Turns on its center (Y-axis) up to 180 degrees, scales down, and fades out */
+    transform-origin: center center;
+    transform: rotateY(calc(var(--hcb-scroll) * 180deg)) scale(calc(1 - (var(--hcb-scroll) * 0.4)));
+    
+    /* Fades out completely before the scroll progress hits 1 */
+    opacity: calc(1 - (var(--hcb-scroll) * 1.3)); 
+    
+    filter: drop-shadow(0 0 50px rgba(255, 102, 178, 0.4));
+  }
+
+  #heart-scroll-bg svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  /* Fallback for reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    #heart-scroll-bg .scene, .layer-heart { 
+      transform: none !important; opacity: 1 !important; 
+    }
+  }
+
+  /* Foreground demo styling */
+  .foreground-content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding-top: 40vh;
+  }
+</style>
+</head>
+<body>
+
+  <div id="heart-scroll-bg" aria-hidden="true">
+    <div class="scene">
+      
+      <div class="layer-heart">
+        <svg viewBox="0 0 100 115">
+          <defs>
+            <radialGradient id="brightPinkGrad" cx="35%" cy="30%" r="75%">
+              <stop offset="0%" stop-color="#ff99cc" />
+              <stop offset="45%" stop-color="#ff4d94" />
+              <stop offset="100%" stop-color="#e6005c" />
+            </radialGradient>
+          </defs>
+          <path 
+            d="M50,25 C35,0 5,10 5,40 C5,70 35,95 50,110 C65,95 95,70 95,40 C95,10 65,0 50,25 Z" 
+            fill="url(#brightPinkGrad)" 
+          />
+        </svg>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="foreground-content">
+    <h1 style="font-size: 4rem; margin-bottom: 0;">Aşağı Kaydır</h1>
+    <p style="color: #a1a1aa; font-size: 1.5rem;">Kalp dönecek ve yavaşça kaybolacak...</p>
+    
+    <div style="height: 100vh;"></div> <h2 style="font-size: 3rem; color: #ff4d94;">Özel Anılarınız</h2>
+    <p style="color: #a1a1aa; max-width: 500px; margin: 0 auto;">Kalp kaybolduktan sonra buradaki içeriklere odaklanabilirsiniz.</p>
+  </div>
+
+  <script>
+    (function() {
+      const bgContainer = document.getElementById('heart-scroll-bg');
+      let ticking = false;
+
+      function updateScroll() {
+        const scrollY = window.scrollY;
+        // The animation finishes after scrolling 75% of the screen height
+        const triggerHeight = window.innerHeight * 0.75;
+        
+        let progress = Math.min(Math.max(scrollY / triggerHeight, 0), 1);
+        
+        bgContainer.style.setProperty('--hcb-scroll', progress.toFixed(3));
+        ticking = false;
+      }
+
+      window.addEventListener('scroll', function() {
+        if (!ticking) {
+          window.requestAnimationFrame(updateScroll);
+          ticking = true;
+        }
+      }, { passive: true });
+
+      updateScroll();
+    })();
+  </script>
+
+</body>
+</html>
