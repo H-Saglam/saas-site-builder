@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import imageCompression from "browser-image-compression";
 import {
   ArrowLeft,
   Save,
@@ -194,9 +195,25 @@ export default function EditSitePage() {
   }
 
   // --- upload ---
+  async function compressImage(file: File): Promise<File> {
+    const compressedBlob = await imageCompression(file, {
+      maxSizeMB: 0.5,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+      fileType: "image/webp",
+    });
+
+    const baseName = file.name.replace(/\.[^/.]+$/, "") || "image";
+    return new File([compressedBlob], `${baseName}.webp`, {
+      type: "image/webp",
+      lastModified: Date.now(),
+    });
+  }
+
   async function uploadFile(file: File): Promise<string> {
+    const compressedFile = await compressImage(file);
     const form = new FormData();
-    form.append("file", file);
+    form.append("file", compressedFile);
     const res = await fetch("/api/upload", {
       method: "POST",
       body: form,

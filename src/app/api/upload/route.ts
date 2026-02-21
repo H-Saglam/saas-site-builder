@@ -27,22 +27,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Dosya tipi kontrolü
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowedTypes.includes(file.type)) {
+    // Dosya tipi kontrolü (istemci tarafında WebP'ye çevrilmiş olmalı)
+    if (file.type !== "image/webp") {
       return NextResponse.json(
-        { error: "Sadece JPG, PNG ve WebP dosyaları desteklenir" },
+        { error: "Yükleme için WebP formatı gerekli" },
         { status: 400 }
       );
     }
 
     const supabase = getServiceSupabase();
 
-    // Dosya adı oluştur — güvenli extension ve siteId
-    const rawExt = (file.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "");
-    const ext = ["jpg", "jpeg", "png", "webp"].includes(rawExt.toLowerCase()) ? rawExt : "jpg";
+    // Dosya adı oluştur — WebP uzantısı ve güvenli siteId
     const safeSiteId = (siteId || "temp").replace(/[^a-zA-Z0-9_-]/g, "");
-    const fileName = `${userId}/${safeSiteId}/${Date.now()}.${ext}`;
+    const fileName = `${userId}/${safeSiteId}/${Date.now()}.webp`;
 
     // Supabase Storage'a yükle
     const arrayBuffer = await file.arrayBuffer();
