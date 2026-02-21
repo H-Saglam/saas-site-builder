@@ -6,21 +6,21 @@ html {
 
 /* ===== Design Tokens ===== */
 :root {
-  --background: #FAFAF8;
-  --foreground: #1C1917;
-  --card: #FFFFFF;
-  --card-foreground: #1C1917;
-  --sidebar: #FFFFFF;
-  --sidebar-border: #E7E5E4;
-  --muted: #F5F5F4;
-  --muted-foreground: #78716C;
-  --primary: #D97706;
+  --background: #09090B;
+  --foreground: #FAFAFA;
+  --card: #18181B;
+  --card-foreground: #FAFAFA;
+  --sidebar: #18181B;
+  --sidebar-border: #27272A;
+  --muted: #27272A;
+  --muted-foreground: #A1A1AA;
+  --primary: #F43F5E;
   --primary-foreground: #FFFFFF;
-  --primary-light: #FEF3C7;
-  --accent: #F59E0B;
-  --destructive: #DC2626;
-  --border: #E7E5E4;
-  --ring: #D97706;
+  --primary-light: #881337;
+  --accent: #FB7185;
+  --destructive: #EF4444;
+  --border: #3F3F46;
+  --ring: #F43F5E;
   --radius: 0.75rem;
 }
 
