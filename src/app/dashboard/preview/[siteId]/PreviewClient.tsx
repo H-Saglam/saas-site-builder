@@ -35,7 +35,7 @@ export default function PreviewClient({ siteData }: { siteData: SiteData }) {
       {shouldShowDraftWatermark && (
         <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden>
           <div className="absolute inset-0 bg-black/20" />
-          <div className="absolute inset-0 grid grid-cols-2 place-items-center gap-8 p-6 sm:grid-cols-3 sm:gap-10 sm:p-10">
+          <div className="absolute inset-0 grid content-between grid-cols-2 place-items-center gap-8 p-6 sm:grid-cols-3 sm:gap-10 sm:p-10">
             {Array.from({ length: 18 }).map((_, index) => (
               <span
                 key={`draft-watermark-${index}`}
