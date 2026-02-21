@@ -54,6 +54,123 @@ function RevealCard({
   );
 }
 
+function CreateIcon() {
+  return (
+    <svg
+      className="w-14 h-14"
+      viewBox="0 0 24 24"
+      fill="none"
+      style={{ filter: "drop-shadow(0 4px 15px rgba(219, 39, 119, 0.4))" }}
+    >
+      <defs>
+        <linearGradient id="createIconGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#a855f7" />
+          <stop offset="50%" stopColor="#db2777" />
+          <stop offset="100%" stopColor="#f43f5e" />
+        </linearGradient>
+      </defs>
+      <rect
+        x="2"
+        y="4"
+        width="20"
+        height="16"
+        rx="3"
+        fill="url(#createIconGrad)"
+        fillOpacity="0.15"
+        stroke="url(#createIconGrad)"
+        strokeWidth="1.5"
+      />
+      <rect
+        x="4"
+        y="6"
+        width="16"
+        height="12"
+        rx="1"
+        stroke="url(#createIconGrad)"
+        strokeWidth="1"
+        fill="none"
+        opacity="0.6"
+      />
+      <path
+        d="M14.5 17.5l5.5-5.5c.8-.8.8-2 0-2.8-.8-.8-2-.8-2.8 0l-5.5 5.5-1.5 4.5 4.5-1.5z"
+        fill="url(#createIconGrad)"
+      />
+      <path d="M14.5 17.5l2.5-2.5" stroke="#09090b" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function BuyIcon() {
+  return (
+    <svg
+      className="w-14 h-14"
+      viewBox="0 0 24 24"
+      fill="none"
+      style={{ filter: "drop-shadow(0 4px 15px rgba(219, 39, 119, 0.4))" }}
+    >
+      <defs>
+        <linearGradient id="buyIconGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#a855f7" />
+          <stop offset="50%" stopColor="#db2777" />
+          <stop offset="100%" stopColor="#f43f5e" />
+        </linearGradient>
+      </defs>
+      <rect
+        x="2"
+        y="5"
+        width="20"
+        height="14"
+        rx="3"
+        fill="url(#buyIconGrad)"
+        fillOpacity="0.15"
+        stroke="url(#buyIconGrad)"
+        strokeWidth="1.5"
+      />
+      <line x1="2" y1="10" x2="22" y2="10" stroke="url(#buyIconGrad)" strokeWidth="2" opacity="0.8" />
+      <rect x="5" y="14" width="4" height="2.5" rx="0.5" fill="url(#buyIconGrad)" />
+      <line
+        x1="12"
+        y1="15.5"
+        x2="19"
+        y2="15.5"
+        stroke="url(#buyIconGrad)"
+        strokeWidth="1"
+        strokeLinecap="round"
+        opacity="0.7"
+      />
+    </svg>
+  );
+}
+
+function AnimatedStepIcon({
+  type,
+  delayMs = 0,
+}: {
+  type: "create" | "buy";
+  delayMs?: number;
+}) {
+  const { ref, isVisible } = useScrollReveal({ threshold: 0.25 });
+  const [activated, setActivated] = useState(false);
+
+  useEffect(() => {
+    if (isVisible && !activated) {
+      const timer = setTimeout(() => setActivated(true), delayMs);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, activated, delayMs]);
+
+  return (
+    <div
+      ref={ref}
+      className={`inline-flex items-center justify-center ${
+        activated ? "animate-tiny-jump" : ""
+      }`}
+    >
+      {type === "create" ? <CreateIcon /> : <BuyIcon />}
+    </div>
+  );
+}
+
 function AnimatedHeart() {
   const { ref, isVisible } = useScrollReveal({ threshold: 0.3 });
   const [activated, setActivated] = useState(false);
@@ -159,19 +276,16 @@ export default function Home() {
                   step: "1",
                   title: "Oluştur",
                   desc: "Fotoğraflarınızı yükleyin, metinlerinizi yazın ve müzik seçin.",
-                  emoji: "🎨",
                 },
                 {
                   step: "2",
                   title: "Satın Al",
                   desc: "Uygun fiyatlı paketlerimizden birini seçip güvenli ödeme yapın.",
-                  emoji: "💳",
                 },
                 {
                   step: "3",
                   title: "Paylaş",
                   desc: "Size özel URL ile hediyenizi anında paylaşın!",
-                  emoji: "🎁",
                 },
               ].map((item, i) => (
                 <RevealCard
@@ -182,8 +296,10 @@ export default function Home() {
                   <div className="text-5xl mb-5 flex items-center justify-center">
                     {item.step === "3" ? (
                       <AnimatedHeart />
+                    ) : item.step === "1" ? (
+                      <AnimatedStepIcon type="create" delayMs={200} />
                     ) : (
-                      item.emoji
+                      <AnimatedStepIcon type="buy" delayMs={260} />
                     )}
                   </div>
                   <div className="text-xs font-semibold text-rose-400 mb-2 tracking-wider uppercase">
