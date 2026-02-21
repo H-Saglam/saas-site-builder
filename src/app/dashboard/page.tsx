@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Plus,
   Search,
@@ -65,12 +65,14 @@ function getTimeRemaining(createdAt: string, durationDays: number) {
   return { expired: false, text: `${hours} saat`, days };
 }
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const [sites, setSites] = useState<SiteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paymentSuccess = searchParams.get("payment") === "success";
 
   useEffect(() => {
     fetch("/api/sites")
@@ -81,6 +83,16 @@ export default function DashboardPage() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!paymentSuccess) return;
+
+    const timer = setTimeout(() => {
+      router.replace("/dashboard", { scroll: false });
+    }, 3500);
+
+    return () => clearTimeout(timer);
+  }, [paymentSuccess, router]);
 
   const handleDelete = async (siteId: string) => {
     if (!confirm("Bu siteyi silmek istediğinize emin misiniz?")) return;
@@ -133,6 +145,12 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {paymentSuccess && (
+        <div className="fixed top-6 right-6 z-50 bg-emerald-600 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg">
+          Ödeme başarılı. Siteniz canlıya alındı.
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-8">
         <div>
@@ -352,5 +370,13 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="pt-8 text-sm text-muted-foreground">Yükleniyor...</div>}>
+      <DashboardPageContent />
+    </Suspense>
   );
 }
