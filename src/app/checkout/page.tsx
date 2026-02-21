@@ -15,6 +15,7 @@ function CheckoutContent() {
   const [isWaiting, setIsWaiting] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null);
   const redirectStartedRef = useRef(false);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const checkSiteStatus = useCallback(async () => {
     if (!siteId || redirectStartedRef.current) return;
@@ -26,6 +27,10 @@ function CheckoutContent() {
       const data = await res.json();
       if (data?.site?.status === "active") {
         redirectStartedRef.current = true;
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
         router.push("/dashboard?payment=success");
       }
     } catch {}
@@ -35,11 +40,19 @@ function CheckoutContent() {
     if (!isWaiting || !siteId) return;
 
     void checkSiteStatus();
-    const intervalId = setInterval(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+    pollingIntervalRef.current = setInterval(() => {
       void checkSiteStatus();
     }, 4000);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
   }, [isWaiting, siteId, checkSiteStatus]);
 
   function handlePayment(packageType: PackageType) {

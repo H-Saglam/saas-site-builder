@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -65,7 +65,7 @@ function getTimeRemaining(createdAt: string, durationDays: number) {
   return { expired: false, text: `${hours} saat`, days };
 }
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const [sites, setSites] = useState<SiteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>("all");
@@ -147,7 +147,7 @@ export default function DashboardPage() {
     <div>
       {paymentSuccess && (
         <div className="fixed top-6 right-6 z-50 bg-emerald-600 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg">
-          Odeme basarili. Siteniz canliya alindi.
+          Ödeme başarılı. Siteniz canlıya alındı.
         </div>
       )}
 
@@ -370,5 +370,13 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="pt-8 text-sm text-muted-foreground">Yükleniyor...</div>}>
+      <DashboardPageContent />
+    </Suspense>
   );
 }

@@ -19,7 +19,7 @@ export async function GET(
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from("sites")
-    .select("id, user_id, status, slug")
+    .select("id, user_id, status")
     .eq("id", id)
     .single();
 
@@ -35,7 +35,6 @@ export async function GET(
     site: {
       id: data.id,
       status: data.status,
-      slug: data.slug,
     },
   });
 }
