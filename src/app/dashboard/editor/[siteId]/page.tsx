@@ -1,18 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import imageCompression from "browser-image-compression";
+import { useForm } from "react-hook-form";
 import {
   ArrowLeft,
   Save,
   Loader2,
-  Trash2,
-  GripVertical,
   Eye,
   Image as ImageIcon,
-  Type,
-  Layout,
   Lock,
   Unlock,
   Music,
@@ -23,55 +20,115 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import type {
-  SiteData,
-  SlideFormData,
-  MusicTrack,
-  SlideType,
-} from "@/lib/types";
+import type { SlideData, SlideFormData, MusicTrack } from "@/lib/types";
 import { GRADIENT_PRESETS, MUSIC_CATEGORIES, siteRowToData } from "@/lib/types";
+import { TEMPLATES, type TemplateEditorFieldId } from "@/lib/templates";
 import TemplateView from "@/components/template/TemplateView";
 
-// ----- helpers -----
-function emptySlide(order: number, type: SlideType = "photo"): SlideFormData {
+const DEFAULT_TEMPLATE_ID = "valentines";
+
+type TemplateFormValues = {
+  coverImageUrl: string;
+  mainTitle: string;
+  paragraph: string;
+  musicId: string;
+};
+
+const TEMPLATE_FIELD_TO_FORM_KEY: Record<TemplateEditorFieldId, keyof TemplateFormValues> = {
+  coverImage: "coverImageUrl",
+  mainTitle: "mainTitle",
+  paragraph: "paragraph",
+  musicId: "musicId",
+};
+
+const REQUIRED_FIELD_MESSAGES: Record<TemplateEditorFieldId, string> = {
+  coverImage: "Kapak fotoğrafı zorunlu.",
+  mainTitle: "Ana başlık zorunlu.",
+  paragraph: "Paragraf zorunlu.",
+  musicId: "Bir müzik seçmelisiniz.",
+};
+
+function normalizeTemplateId(candidate: string | null | undefined): string {
+  if (!candidate) return DEFAULT_TEMPLATE_ID;
+  return TEMPLATES.some((template) => template.id === candidate) ? candidate : DEFAULT_TEMPLATE_ID;
+}
+
+function extractTemplateValues(slides: SlideData[]): Omit<TemplateFormValues, "musicId"> {
+  const firstImageSlide = slides.find((slide) => slide.imageUrl && slide.imageUrl.length > 0);
+  const firstHeadingSlide = slides.find((slide) => slide.heading && slide.heading.length > 0);
+  const firstDescriptionSlide = slides.find((slide) => slide.description && slide.description.length > 0);
+
   return {
-    order,
-    type,
-    heading: "",
-    description: "",
-    gradient: GRADIENT_PRESETS[0].gradient,
-    imageFile: null,
-    imageUrl: "",
-    collageFiles: [null, null, null],
-    collageUrls: ["", "", ""],
-    handPointerText: "",
+    coverImageUrl: firstImageSlide?.imageUrl ?? "",
+    mainTitle: firstHeadingSlide?.heading ?? "",
+    paragraph: firstDescriptionSlide?.description ?? "",
   };
 }
 
-function defaultSlides(): SlideFormData[] {
-  return [
-    { ...emptySlide(1, "cover"), description: "Seninle başlayan hikayemiz...", gradient: GRADIENT_PRESETS[0].gradient },
-    { ...emptySlide(2, "photo"), gradient: GRADIENT_PRESETS[1].gradient },
-    { ...emptySlide(3, "photo"), gradient: GRADIENT_PRESETS[4].gradient },
-    { ...emptySlide(4, "finale"), heading: "Seni çok seviyorum! ❤️", description: "Mutlu yıllar!", gradient: GRADIENT_PRESETS[8].gradient },
-  ];
+function mapTemplateToSlides(
+  templateId: string,
+  values: Omit<TemplateFormValues, "musicId">
+): SlideFormData[] {
+  const normalizedValues = {
+    coverImageUrl: values.coverImageUrl,
+    mainTitle: values.mainTitle.trim(),
+    paragraph: values.paragraph.trim(),
+  };
+
+  switch (templateId) {
+    case "valentines":
+    default:
+      return [
+        {
+          order: 1,
+          type: "cover",
+          heading: normalizedValues.mainTitle,
+          description: normalizedValues.paragraph,
+          gradient: GRADIENT_PRESETS[0].gradient,
+          imageUrl: normalizedValues.coverImageUrl,
+          imageFile: null,
+          collageFiles: [null, null, null],
+          collageUrls: ["", "", ""],
+          handPointerText: "",
+        },
+        {
+          order: 2,
+          type: "photo",
+          heading: normalizedValues.mainTitle,
+          description: normalizedValues.paragraph,
+          gradient: GRADIENT_PRESETS[1].gradient,
+          imageUrl: normalizedValues.coverImageUrl,
+          imageFile: null,
+          collageFiles: [null, null, null],
+          collageUrls: ["", "", ""],
+          handPointerText: "",
+        },
+        {
+          order: 3,
+          type: "text",
+          heading: normalizedValues.mainTitle,
+          description: normalizedValues.paragraph,
+          gradient: GRADIENT_PRESETS[4].gradient,
+          imageFile: null,
+          collageFiles: [null, null, null],
+          collageUrls: ["", "", ""],
+          handPointerText: "",
+        },
+        {
+          order: 4,
+          type: "finale",
+          heading: normalizedValues.mainTitle,
+          description: normalizedValues.paragraph,
+          gradient: GRADIENT_PRESETS[8].gradient,
+          imageUrl: normalizedValues.coverImageUrl,
+          imageFile: null,
+          collageFiles: [null, null, null],
+          collageUrls: ["", "", ""],
+          handPointerText: "👈 En güzel kare!",
+        },
+      ];
+  }
 }
-
-const SLIDE_TYPE_COLORS: Record<SlideType, string> = {
-  cover: "border-l-amber-500",
-  photo: "border-l-blue-500",
-  collage: "border-l-purple-500",
-  text: "border-l-green-500",
-  finale: "border-l-rose-500",
-};
-
-const SLIDE_TYPE_LABELS: Record<SlideType, string> = {
-  cover: "Kapak",
-  photo: "Fotoğraf",
-  collage: "Kolaj",
-  text: "Metin",
-  finale: "Final",
-};
 
 export default function EditSitePage() {
   const router = useRouter();
@@ -79,14 +136,14 @@ export default function EditSitePage() {
   const searchParams = useSearchParams();
   const siteId = params.siteId as string;
   const isNewSite = siteId === "new";
-  const templateParam = isNewSite ? searchParams.get("template") : null;
+  const templateParam = isNewSite ? normalizeTemplateId(searchParams.get("template")) : null;
 
   const [loading, setLoading] = useState(!isNewSite);
   const [saving, setSaving] = useState(false);
-  const [site, setSite] = useState<SiteData | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [editExpired, setEditExpired] = useState(false);
-  const [daysRemaining, setDaysRemaining] = useState<number>(0);
+  const [templateId, setTemplateId] = useState(templateParam ?? DEFAULT_TEMPLATE_ID);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImagePreviewUrl, setCoverImagePreviewUrl] = useState("");
 
   // --- form state ---
   const [slug, setSlug] = useState("");
@@ -95,13 +152,26 @@ export default function EditSitePage() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [slides, setSlides] = useState<SlideFormData[]>(isNewSite ? defaultSlides() : []);
-  const [selectedMusicId, setSelectedMusicId] = useState<string | null>(null);
   const [musicTracks, setMusicTracks] = useState<MusicTrack[]>([]);
 
   // --- create mode: slug availability ---
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const {
+    register,
+    watch,
+    setValue,
+    trigger,
+    clearErrors,
+    formState: { errors },
+  } = useForm<TemplateFormValues>({
+    defaultValues: {
+      coverImageUrl: "",
+      mainTitle: "",
+      paragraph: "",
+      musicId: "",
+    },
+  });
 
   const checkSlug = useCallback(async (s: string) => {
     if (s.length < 3) {
@@ -116,6 +186,50 @@ export default function EditSitePage() {
       setSlugAvailable(null);
     }
   }, []);
+
+  const template = useMemo(
+    () => TEMPLATES.find((item) => item.id === templateId) ?? TEMPLATES[0],
+    [templateId]
+  );
+  const templateFields = useMemo(() => {
+    if (template?.editorFields?.length) return template.editorFields;
+    return TEMPLATES.find((item) => item.id === DEFAULT_TEMPLATE_ID)?.editorFields ?? [];
+  }, [template]);
+  const requiredFieldIds = useMemo(
+    () => new Set(templateFields.filter((field) => field.required).map((field) => field.id)),
+    [templateFields]
+  );
+  const requiredValidationFields = useMemo<(keyof TemplateFormValues)[]>(
+    () =>
+      templateFields
+        .filter((field) => field.required)
+        .map((field) => TEMPLATE_FIELD_TO_FORM_KEY[field.id]),
+    [templateFields]
+  );
+  const coverImageRequired = requiredFieldIds.has("coverImage");
+  const mainTitleRequired = requiredFieldIds.has("mainTitle");
+  const paragraphRequired = requiredFieldIds.has("paragraph");
+  const musicRequired = requiredFieldIds.has("musicId");
+  const mainTitleValue = watch("mainTitle");
+  const paragraphValue = watch("paragraph");
+  const coverImageUrlValue = watch("coverImageUrl");
+  const selectedMusicId = watch("musicId");
+
+  useEffect(() => {
+    if (!isNewSite || !templateParam) return;
+    setTemplateId(templateParam);
+  }, [isNewSite, templateParam]);
+
+  useEffect(() => {
+    if (!coverImageFile) {
+      setCoverImagePreviewUrl("");
+      return;
+    }
+
+    const url = URL.createObjectURL(coverImageFile);
+    setCoverImagePreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverImageFile]);
 
   useEffect(() => {
     if (!isNewSite) return;
@@ -135,33 +249,17 @@ export default function EditSitePage() {
         if (!res.ok) throw new Error("Site bulunamadı");
         const data = await res.json();
         const raw = data.site;
-        const s: SiteData = siteRowToData(raw);
-        setSite(s);
+        const s = siteRowToData(raw);
+        const templateValues = extractTemplateValues(s.slides);
         setSlug(s.slug);
         setTitle(s.title);
         setRecipientName(s.recipientName);
         setIsPrivate(s.isPrivate);
-        setSlides(
-          s.slides.map((sl, i) => ({
-            ...sl,
-            order: i + 1,
-            imageFile: null,
-            collageFiles: [null, null, null],
-            collageUrls: sl.collageUrls ?? ["", "", ""],
-            handPointerText: sl.handPointerText ?? "",
-          })) as SlideFormData[]
-        );
-        setSelectedMusicId(s.musicId ?? null);
-
-        // Düzenleme süresi kontrolü (1 hafta)
-        if (raw.created_at) {
-          const createdAt = new Date(raw.created_at);
-          const now = new Date();
-          const daysSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-          const remaining = Math.max(0, 7 - daysSinceCreation);
-          setDaysRemaining(Math.ceil(remaining));
-          setEditExpired(daysSinceCreation > 7);
-        }
+        setTemplateId(normalizeTemplateId(s.templateId));
+        setValue("coverImageUrl", templateValues.coverImageUrl);
+        setValue("mainTitle", templateValues.mainTitle);
+        setValue("paragraph", templateValues.paragraph);
+        setValue("musicId", s.musicId ?? "");
       } catch {
         alert("Site yüklenirken hata oluştu.");
         router.push("/dashboard");
@@ -180,19 +278,6 @@ export default function EditSitePage() {
       .then((d) => setMusicTracks(d.tracks ?? []))
       .catch(() => {});
   }, []);
-
-  // --- slide helpers ---
-  function addSlide(type: SlideType) {
-    if (slides.length >= 12) return;
-    setSlides([...slides, emptySlide(slides.length + 1, type)]);
-  }
-  function removeSlide(index: number) {
-    if (slides.length <= 3) return;
-    setSlides(slides.filter((_, i) => i !== index).map((s, i) => ({ ...s, order: i + 1 })));
-  }
-  function updateSlide(index: number, patch: Partial<SlideFormData>) {
-    setSlides(slides.map((s, i) => (i === index ? { ...s, ...patch } : s)));
-  }
 
   // --- upload ---
   async function compressImage(file: File): Promise<File> {
@@ -223,24 +308,6 @@ export default function EditSitePage() {
     return data.url;
   }
 
-  // --- immediate upload for create mode ---
-  async function handleImageUpload(index: number, file: File, collageIndex?: number) {
-    try {
-      const url = await uploadFile(file);
-      if (collageIndex !== undefined) {
-        const updated = [...slides];
-        const urls = [...(updated[index].collageUrls ?? ["", "", ""])];
-        urls[collageIndex] = url;
-        updated[index] = { ...updated[index], collageUrls: urls };
-        setSlides(updated);
-      } else {
-        updateSlide(index, { imageUrl: url });
-      }
-    } catch {
-      alert("Fotoğraf yüklenirken hata oluştu");
-    }
-  }
-
   // --- save ---
   async function handleSave() {
     if (isPrivate && password && password !== confirmPassword) {
@@ -249,32 +316,23 @@ export default function EditSitePage() {
     }
     setSaving(true);
     try {
-      // process slides for saving
-      const processedSlides = await Promise.all(
-        slides.map(async (s) => {
-          let imageUrl = s.imageUrl ?? "";
-          if (s.imageFile) imageUrl = await uploadFile(s.imageFile);
-          let collageUrls = s.collageUrls ?? ["", "", ""];
-          if (s.collageFiles) {
-            collageUrls = await Promise.all(
-              s.collageFiles.map(async (f, ci) => {
-                if (f) return uploadFile(f);
-                return collageUrls[ci] ?? "";
-              })
-            );
-          }
-          return {
-            order: s.order,
-            type: s.type,
-            heading: s.heading,
-            description: s.description,
-            gradient: s.gradient,
-            imageUrl,
-            collageUrls,
-            handPointerText: s.handPointerText,
-          };
-        })
-      );
+      const isTemplateValid =
+        requiredValidationFields.length > 0
+          ? await trigger(requiredValidationFields)
+          : true;
+      if (!isTemplateValid) {
+        setSaving(false);
+        return;
+      }
+
+      const uploadedCoverImage =
+        coverImageFile ? await uploadFile(coverImageFile) : coverImageUrlValue;
+
+      const processedSlides = mapTemplateToSlides(templateId, {
+        coverImageUrl: uploadedCoverImage,
+        mainTitle: mainTitleValue,
+        paragraph: paragraphValue,
+      });
 
       if (isNewSite) {
         // --- CREATE ---
@@ -282,6 +340,7 @@ export default function EditSitePage() {
           title,
           recipientName,
           slug,
+          templateId,
           slides: processedSlides,
           musicId: selectedMusicId,
           isPrivate,
@@ -305,6 +364,7 @@ export default function EditSitePage() {
           slug,
           title,
           recipientName,
+          templateId,
           slides: processedSlides,
           musicId: selectedMusicId,
           isPrivate,
@@ -331,24 +391,30 @@ export default function EditSitePage() {
   }
 
   // --- preview data ---
-  const previewSlides = slides.map((s) => ({
-    order: s.order,
-    type: s.type,
-    heading: s.heading,
-    description: s.description,
-    gradient: s.gradient,
-    imageUrl: s.imageFile ? URL.createObjectURL(s.imageFile) : s.imageUrl,
-    collageUrls: s.collageFiles?.map((f, ci) =>
-      f ? URL.createObjectURL(f) : (s.collageUrls?.[ci] ?? "")
-    ) ?? s.collageUrls,
-    handPointerText: s.handPointerText,
-  }));
+  const previewSlides = mapTemplateToSlides(templateId, {
+    coverImageUrl: coverImagePreviewUrl || coverImageUrlValue,
+    mainTitle: mainTitleValue,
+    paragraph: paragraphValue,
+  });
   const selectedTrack = musicTracks.find((t) => t.id === selectedMusicId) ?? null;
 
   // music tracks filtered by category (create mode uses category filter)
   const filteredMusicTracks = selectedCategory === "all"
     ? musicTracks
     : musicTracks.filter((t) => t.category === selectedCategory);
+  const contentFields = templateFields.filter((field) => field.id !== "musicId");
+  const coverImageProvided = Boolean(coverImageFile || coverImageUrlValue);
+  const hasMissingRequiredTemplateField =
+    (coverImageRequired && !coverImageProvided) ||
+    (mainTitleRequired && !mainTitleValue.trim()) ||
+    (paragraphRequired && !paragraphValue.trim()) ||
+    (musicRequired && !selectedMusicId);
+  const saveDisabled =
+    saving ||
+    !title.trim() ||
+    !recipientName.trim() ||
+    !slug.trim() ||
+    hasMissingRequiredTemplateField;
 
   if (loading) {
     return (
@@ -406,11 +472,11 @@ export default function EditSitePage() {
             </button>
             <button
               onClick={handleSave}
-              disabled={saving || (!isNewSite && editExpired) || (isNewSite && (!title || !recipientName || !slug))}
+              disabled={saveDisabled}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-lg hover:bg-accent disabled:opacity-50 transition-colors font-medium"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {!isNewSite && editExpired ? "Süre Doldu" : isNewSite ? "Oluştur" : "Kaydet"}
+              {isNewSite ? "Oluştur" : "Kaydet"}
             </button>
           </div>
         </div>
@@ -421,37 +487,13 @@ export default function EditSitePage() {
         {/* Left: Form Panel */}
         <div className="w-full lg:w-[55%] p-4 lg:p-6 space-y-6 overflow-y-auto">
           {/* Template info banner */}
-          {isNewSite && templateParam && (
+          {isNewSite && template && (
             <div className="bg-blue-50 border border-blue-200 text-blue-700 px-5 py-4 rounded-xl flex items-start gap-3">
               <Sparkles className="h-5 w-5 mt-0.5 shrink-0" />
               <div>
                 <p className="font-semibold">Şablondan oluşturuluyor</p>
                 <p className="text-sm mt-1">
-                  Seçtiğiniz şablona göre alanlar önceden doldurulmuş olabilir. İstediğiniz gibi düzenleyebilirsiniz.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Edit mode alerts */}
-          {!isNewSite && editExpired && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl flex items-start gap-3">
-              <Info className="h-5 w-5 mt-0.5 shrink-0" />
-              <div>
-                <p className="font-semibold">Düzenleme süresi doldu</p>
-                <p className="text-sm mt-1">
-                  Site oluşturulduktan sonra sadece 1 hafta içinde düzenlenebilir. Artık bu siteyi güncelleyemezsiniz.
-                </p>
-              </div>
-            </div>
-          )}
-          {!isNewSite && !editExpired && daysRemaining <= 3 && daysRemaining > 0 && (
-            <div className="bg-amber-50 border border-amber-200 text-amber-700 px-5 py-4 rounded-xl flex items-start gap-3">
-              <Info className="h-5 w-5 mt-0.5 shrink-0" />
-              <div>
-                <p className="font-semibold">Düzenleme süreniz yakında doluyor</p>
-                <p className="text-sm mt-1">
-                  Bu siteyi düzenleyebilmeniz için {daysRemaining} gün kaldı. Değişiklikleri en kısa sürede kaydetmeyi unutmayın.
+                  <span className="font-medium">{template.name}</span> şablonu için sabit alanlar gösteriliyor.
                 </p>
               </div>
             </div>
@@ -590,16 +632,12 @@ export default function EditSitePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <button
-                onClick={() => setSelectedMusicId(null)}
-                className={`p-3 rounded-lg border text-left text-sm transition-all ${
-                  !selectedMusicId
-                    ? "border-primary bg-primary-light text-foreground font-medium"
-                    : "border-border bg-muted text-muted-foreground hover:border-primary/40"
-                }`}
-              >
-                Müzik Yok
-              </button>
+              <input
+                type="hidden"
+                {...register("musicId", {
+                  required: musicRequired ? REQUIRED_FIELD_MESSAGES.musicId : false,
+                })}
+              />
               {selectedCategory === "all" ? (
                 // Group by category
                 MUSIC_CATEGORIES.map((cat) => {
@@ -613,7 +651,9 @@ export default function EditSitePage() {
                       {catTracks.map((track) => (
                         <button
                           key={track.id}
-                          onClick={() => setSelectedMusicId(track.id)}
+                          onClick={() =>
+                            setValue("musicId", track.id, { shouldDirty: true, shouldValidate: true })
+                          }
                           className={`w-full p-3 rounded-lg border text-left text-sm mb-1.5 transition-all ${
                             selectedMusicId === track.id
                               ? "border-primary bg-primary-light text-foreground font-medium"
@@ -631,7 +671,9 @@ export default function EditSitePage() {
                 filteredMusicTracks.map((track) => (
                   <button
                     key={track.id}
-                    onClick={() => setSelectedMusicId(track.id)}
+                    onClick={() =>
+                      setValue("musicId", track.id, { shouldDirty: true, shouldValidate: true })
+                    }
                     className={`p-3 rounded-lg border text-left text-sm transition-all ${
                       selectedMusicId === track.id
                         ? "border-primary bg-primary-light text-foreground font-medium"
@@ -643,197 +685,126 @@ export default function EditSitePage() {
                 ))
               )}
             </div>
+            {errors.musicId && (
+              <p className="text-xs text-red-600 mt-2">{errors.musicId.message}</p>
+            )}
           </section>
 
-          {/* Slide'lar */}
+          {/* Şablon Alanları */}
           <section className="bg-card border border-border rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                 <Layers className="h-5 w-5 text-primary" />
-                Slide&apos;lar ({slides.length}/12)
+                Şablon Alanları
               </h2>
+              <span className="text-xs text-muted-foreground">{template?.name}</span>
             </div>
-
-            {/* Add slide buttons */}
-            {slides.length < 12 && (
-              <div className="grid grid-cols-3 gap-3 mb-5">
-                <button
-                  onClick={() => addSlide("photo")}
-                  className="flex flex-col items-center gap-1.5 p-4 border-2 border-dashed border-border rounded-xl hover:border-primary hover:bg-primary-light/30 transition-all text-muted-foreground hover:text-primary"
-                >
-                  <ImageIcon className="h-5 w-5" />
-                  <span className="text-xs font-medium">Fotoğraf</span>
-                </button>
-                <button
-                  onClick={() => addSlide("collage")}
-                  className="flex flex-col items-center gap-1.5 p-4 border-2 border-dashed border-border rounded-xl hover:border-primary hover:bg-primary-light/30 transition-all text-muted-foreground hover:text-primary"
-                >
-                  <Layout className="h-5 w-5" />
-                  <span className="text-xs font-medium">Kolaj</span>
-                </button>
-                <button
-                  onClick={() => addSlide("text")}
-                  className="flex flex-col items-center gap-1.5 p-4 border-2 border-dashed border-border rounded-xl hover:border-primary hover:bg-primary-light/30 transition-all text-muted-foreground hover:text-primary"
-                >
-                  <Type className="h-5 w-5" />
-                  <span className="text-xs font-medium">Metin</span>
-                </button>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              {slides.map((slide, i) => (
-                <div
-                  key={i}
-                  className={`bg-card border border-border rounded-xl p-4 shadow-sm border-l-4 ${SLIDE_TYPE_COLORS[slide.type]}`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <GripVertical className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-semibold text-foreground">
-                        #{slide.order} — {SLIDE_TYPE_LABELS[slide.type]}
-                      </span>
-                    </div>
-                    {slide.type !== "cover" && slide.type !== "finale" && slides.length > 3 && (
-                      <button
-                        onClick={() => removeSlide(i)}
-                        className="text-red-400 hover:text-red-600 transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">Başlık</label>
-                      <input
-                        value={slide.heading}
-                        onChange={(e) => updateSlide(i, { heading: e.target.value })}
-                        className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:border-primary focus:ring-2 focus:ring-ring/20 outline-none transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">Açıklama</label>
-                      <input
-                        value={slide.description}
-                        onChange={(e) => updateSlide(i, { description: e.target.value })}
-                        className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:border-primary focus:ring-2 focus:ring-ring/20 outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Gradient seçimi */}
-                  <div className="mt-3">
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Arka Plan Rengi</label>
-                    <div className="flex gap-2 flex-wrap">
-                      {GRADIENT_PRESETS.map((g, gi) => (
-                        <button
-                          key={gi}
-                          onClick={() => updateSlide(i, { gradient: g.gradient })}
-                          className={`w-10 h-10 rounded-full transition-all ${
-                            slide.gradient.from === g.gradient.from
-                              ? "ring-2 ring-primary ring-offset-2 scale-110"
-                              : "hover:scale-105"
-                          }`}
-                          style={{
-                            background: `linear-gradient(135deg, ${g.gradient.from}, ${g.gradient.to})`,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Photo slide */}
-                  {slide.type === "photo" && (
-                    <div className="mt-3">
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">Fotoğraf</label>
-                      {slide.imageUrl && !slide.imageFile && (
-                        <img src={slide.imageUrl} alt="" className="w-20 h-20 object-cover rounded-lg mb-2" />
+            <div className="space-y-5">
+              {contentFields.map((field) => {
+                if (field.id === "coverImage") {
+                  return (
+                    <div key={field.id}>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">
+                        {field.label}
+                      </label>
+                      {field.helperText && (
+                        <p className="text-xs text-muted-foreground mb-2">{field.helperText}</p>
                       )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          if (isNewSite) {
-                            handleImageUpload(i, file);
-                          } else {
-                            updateSlide(i, { imageFile: file });
-                          }
-                        }}
-                        className="text-sm text-muted-foreground"
-                      />
-                    </div>
-                  )}
-
-                  {/* Collage slide */}
-                  {slide.type === "collage" && (
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {[0, 1, 2].map((ci) => (
-                        <div key={ci}>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">Foto {ci + 1}</label>
-                          {slide.collageUrls?.[ci] && !slide.collageFiles?.[ci] && (
-                            <img src={slide.collageUrls[ci]} alt="" className="w-16 h-16 object-cover rounded mb-1" />
-                          )}
+                      {(coverImagePreviewUrl || coverImageUrlValue) && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={coverImagePreviewUrl || coverImageUrlValue}
+                          alt="Kapak önizleme"
+                          className="w-28 h-28 object-cover rounded-lg mb-2 border border-border"
+                        />
+                      )}
+                      <div className="flex items-center gap-3">
+                        <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border text-sm cursor-pointer hover:border-primary/40 transition-colors">
+                          <ImageIcon className="h-4 w-4" />
+                          Fotoğraf Seç
                           <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              if (isNewSite) {
-                                handleImageUpload(i, file, ci);
-                              } else {
-                                const files = [...(slide.collageFiles ?? [null, null, null])];
-                                files[ci] = file;
-                                updateSlide(i, { collageFiles: files as [File | null, File | null, File | null] });
-                              }
+                            className="hidden"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0] ?? null;
+                              setCoverImageFile(file);
+                              if (file) clearErrors("coverImageUrl");
                             }}
-                            className="text-xs w-full text-muted-foreground"
                           />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Finale */}
-                  {slide.type === "finale" && (
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">Fotoğraf</label>
-                        {slide.imageUrl && !slide.imageFile && (
-                          <img src={slide.imageUrl} alt="" className="w-20 h-20 object-cover rounded-lg mb-2" />
+                        </label>
+                        {coverImageUrlValue && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCoverImageFile(null);
+                              setValue("coverImageUrl", "", { shouldDirty: true, shouldValidate: true });
+                            }}
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            Mevcut görseli kaldır
+                          </button>
                         )}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            if (isNewSite) {
-                              handleImageUpload(i, file);
-                            } else {
-                              updateSlide(i, { imageFile: file });
-                            }
-                          }}
-                          className="text-sm text-muted-foreground"
-                        />
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">El İşareti Metni</label>
-                        <input
-                          value={slide.handPointerText}
-                          onChange={(e) => updateSlide(i, { handPointerText: e.target.value })}
-                          className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:border-primary focus:ring-2 focus:ring-ring/20 outline-none transition-all"
-                          placeholder="👈 En güzel kare!"
-                        />
-                      </div>
+                      <input
+                        type="hidden"
+                        {...register("coverImageUrl", {
+                          validate: (value) =>
+                            !coverImageRequired ||
+                            Boolean(value || coverImageFile) ||
+                            REQUIRED_FIELD_MESSAGES.coverImage,
+                        })}
+                      />
+                      {errors.coverImageUrl && (
+                        <p className="text-xs text-red-600 mt-1.5">{errors.coverImageUrl.message}</p>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  );
+                }
+
+                if (field.id === "mainTitle") {
+                  return (
+                    <div key={field.id}>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">
+                        {field.label}
+                      </label>
+                      <input
+                        {...register("mainTitle", {
+                          required: mainTitleRequired ? REQUIRED_FIELD_MESSAGES.mainTitle : false,
+                        })}
+                        placeholder={field.placeholder}
+                        className="w-full bg-muted border border-border rounded-lg px-3 py-2.5 text-foreground focus:border-primary focus:ring-2 focus:ring-ring/20 outline-none transition-all"
+                      />
+                      {errors.mainTitle && (
+                        <p className="text-xs text-red-600 mt-1.5">{errors.mainTitle.message}</p>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (field.id === "paragraph") {
+                  return (
+                    <div key={field.id}>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">
+                        {field.label}
+                      </label>
+                      <textarea
+                        {...register("paragraph", {
+                          required: paragraphRequired ? REQUIRED_FIELD_MESSAGES.paragraph : false,
+                        })}
+                        rows={5}
+                        placeholder={field.placeholder}
+                        className="w-full bg-muted border border-border rounded-lg px-3 py-2.5 text-foreground focus:border-primary focus:ring-2 focus:ring-ring/20 outline-none transition-all resize-y"
+                      />
+                      {errors.paragraph && (
+                        <p className="text-xs text-red-600 mt-1.5">{errors.paragraph.message}</p>
+                      )}
+                    </div>
+                  );
+                }
+
+                return null;
+              })}
             </div>
           </section>
 
@@ -858,7 +829,7 @@ export default function EditSitePage() {
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-border rounded-b-2xl z-10" />
               {/* Preview content */}
               <div className="w-full h-full overflow-hidden">
-                {slides.length > 0 ? (
+                {previewSlides.length > 0 ? (
                   <TemplateView
                     recipientName={recipientName || "İsim"}
                     slides={previewSlides}
@@ -868,7 +839,7 @@ export default function EditSitePage() {
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground px-6 text-center">
                     <Sparkles className="h-8 w-8 mb-3 opacity-40" />
-                    <p className="text-sm">Slide ekledikçe önizleme burada görünecek</p>
+                    <p className="text-sm">Şablon alanları dolduruldukça önizleme burada görünecek</p>
                   </div>
                 )}
               </div>
