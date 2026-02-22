@@ -3,8 +3,9 @@
 import { useEffect, useRef } from "react";
 
 const COLORS_DARK = [
-  "rgba(244, 63, 94, 0.35)",   // rose-500
-  "rgba(244, 63, 94, 0.15)",   // rose-500 low
+  "rgba(168, 85, 247, 0.35)",  // purple-500
+  "rgba(219, 39, 119, 0.30)",  // pink-700
+  "rgba(244, 63, 94, 0.25)",   // rose-500
   "rgba(161, 161, 170, 0.25)", // zinc-400
 ];
 

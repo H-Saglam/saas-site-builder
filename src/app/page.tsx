@@ -7,6 +7,8 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import DiagonalLinesBackground from "@/components/HeartScrollAnimation";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
+const SHOW_DOT_PARTICLES = false;
+
 function RevealSection({
   children,
   className = "",
@@ -211,7 +213,7 @@ function AnimatedHeart() {
 export default function Home() {
   return (
     <div className="relative min-h-screen bg-zinc-950 font-[var(--font-outfit)]">
-      <AnimatedBackground />
+      {SHOW_DOT_PARTICLES && <AnimatedBackground />}
       <DiagonalLinesBackground />
 
       <div className="relative z-10">
@@ -245,7 +247,7 @@ export default function Home() {
             <h1 className="text-4xl md:text-6xl font-bold text-white max-w-3xl leading-tight mb-6 tracking-tight">
               Anılarınızı
               <br />
-              <span className="text-rose-400">Dijital Hikayelere</span>{" "}
+              <span className="bg-gradient-to-r from-purple-500 via-pink-600 to-rose-500 bg-clip-text text-transparent">Dijital Hikayelere</span>{" "}
               Dönüştürün
             </h1>
             <p className="text-lg md:text-xl text-zinc-400 max-w-xl mb-10 leading-relaxed">
