@@ -29,7 +29,8 @@ import type {
   MusicTrack,
   SlideType,
 } from "@/lib/types";
-import { GRADIENT_PRESETS, MUSIC_CATEGORIES, siteRowToData } from "@/lib/types";
+import { GRADIENT_PRESETS, MUSIC_CATEGORIES } from "@/lib/constants";
+import { siteRowToData } from "@/lib/mappers";
 import TemplateView from "@/components/template/TemplateView";
 
 // ----- helpers -----
