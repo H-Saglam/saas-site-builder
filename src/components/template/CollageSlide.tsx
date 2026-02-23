@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { SlideGradient } from "@/lib/types";
 import SongBadge from "./SongBadge";
 
@@ -11,7 +12,7 @@ interface CollageSlideProps {
   isActive: boolean;
 }
 
-export default function CollageSlide({
+function CollageSlide({
   heading,
   description,
   collageUrls,
@@ -55,3 +56,6 @@ export default function CollageSlide({
     </section>
   );
 }
+
+// Wrapped in React.memo to prevent unnecessary re-renders when other slides are active.
+export default memo(CollageSlide);
