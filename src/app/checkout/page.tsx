@@ -55,7 +55,7 @@ function CheckoutContent() {
     };
   }, [isWaiting, siteId, checkSiteStatus]);
 
-  function handlePayment(packageType: PackageType) {
+  async function handlePayment(packageType: PackageType) {
     if (!siteId) {
       alert("Site bilgisi bulunamadı");
       return;
@@ -63,9 +63,28 @@ function CheckoutContent() {
 
     const shopierApiKey = process.env.NEXT_PUBLIC_SHOPIER_API_KEY;
     if (!shopierApiKey || shopierApiKey === "XXXXXXXXXXXX") {
-      alert(
-        `Shopier henüz yapılandırılmamış.\n\nGeliştirme modunda siteyi dashboard'dan "Canlıya Al" butonuyla doğrudan aktifleştirebilirsiniz.\n\nPaket: ${packageType === "premium" ? "Premium (249₺)" : "Standart (149₺)"}`
-      );
+      if (process.env.NODE_ENV === "development") {
+        setSelectedPackage(packageType);
+        setIsWaiting(true);
+        try {
+          const res = await fetch("/api/activate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ siteId, packageType }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data?.error ?? "Aktifleştirme başarısız");
+          }
+          router.push("/dashboard?payment=success");
+        } catch (error: unknown) {
+          setIsWaiting(false);
+          alert((error as Error).message ?? "Aktifleştirme başarısız");
+        }
+        return;
+      }
+
+      alert("Shopier henüz yapılandırılmamış.");
       return;
     }
 
