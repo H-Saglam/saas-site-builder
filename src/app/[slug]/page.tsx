@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceSupabase } from "@/lib/supabase";
 import type { SiteRow, MusicRow } from "@/lib/types";
-import { siteRowToData, musicRowToTrack } from "@/lib/types";
+import { siteRowToData, musicRowToTrack } from "@/lib/mappers";
 import SitePageClient from "./SitePageClient";
 
 interface PageProps {

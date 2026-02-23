@@ -3,7 +3,7 @@ import { getAuth } from "@clerk/nextjs/server";
 import { getServiceSupabase } from "@/lib/supabase";
 import JSZip from "jszip";
 import type { SiteData, SlideData } from "@/lib/types";
-import { siteRowToData } from "@/lib/types";
+import { siteRowToData } from "@/lib/mappers";
 import fs from "fs";
 import path from "path";
 

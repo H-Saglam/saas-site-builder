@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
 import type { MusicRow } from "@/lib/types";
-import { musicRowToTrack } from "@/lib/types";
+import { musicRowToTrack } from "@/lib/mappers";
 
 // GET — Tüm müzikleri getir (opsiyonel kategori filtresi)
 export async function GET(request: Request) {
