@@ -60,7 +60,7 @@ export default function AdminSitesTable({ sites }: { sites: AdminSiteRow[] }) {
 
   function runStatusAction(
     siteId: string,
-    newStatus: "active" | "draft",
+    newStatus: "active" | "premium" | "draft",
     isPremium: boolean,
     actionKey: string,
     successText: string
@@ -88,7 +88,7 @@ export default function AdminSitesTable({ sites }: { sites: AdminSiteRow[] }) {
   return (
     <section className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-foreground">Recent 50 Sites</h2>
+        <h2 className="text-sm font-semibold text-foreground">All Sites</h2>
         {feedbackMessage && (
           <p className={`text-xs ${feedbackType === "error" ? "text-red-600" : "text-emerald-600"}`}>
             {feedbackMessage}
@@ -148,7 +148,7 @@ export default function AdminSitesTable({ sites }: { sites: AdminSiteRow[] }) {
                           onClick={() =>
                             runStatusAction(
                               site.id,
-                              "active",
+                              "premium",
                               true,
                               premiumActionKey,
                               "Site premium olarak aktive edildi."
@@ -156,8 +156,14 @@ export default function AdminSitesTable({ sites }: { sites: AdminSiteRow[] }) {
                           }
                           className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                         >
-                          {isPremiumPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                          Make Premium
+                          {isPremiumPending ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Güncelleniyor...
+                            </>
+                          ) : (
+                            "Premium Yap"
+                          )}
                         </button>
                         <button
                           type="button"
@@ -174,8 +180,14 @@ export default function AdminSitesTable({ sites }: { sites: AdminSiteRow[] }) {
                           }}
                           className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
                         >
-                          {isDeactivatePending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                          Deactivate
+                          {isDeactivatePending ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Güncelleniyor...
+                            </>
+                          ) : (
+                            "Taslağa Çevir"
+                          )}
                         </button>
                       </div>
                     </td>

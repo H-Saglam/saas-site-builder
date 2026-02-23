@@ -12,7 +12,7 @@ const PACKAGE_PRICES_TRY = {
 export default async function AdminDashboardPage() {
   const supabase = getServiceSupabase();
 
-  const [totalSitesResult, paidSitesResult, premiumPaidSitesResult, recentSitesResult] = await Promise.all([
+  const [totalSitesResult, paidSitesResult, premiumPaidSitesResult, allSitesResult] = await Promise.all([
     supabase.from("sites").select("*", { count: "exact", head: true }),
     supabase
       .from("sites")
@@ -26,8 +26,7 @@ export default async function AdminDashboardPage() {
     supabase
       .from("sites")
       .select("id, slug, recipient_name, template_id, status, created_at")
-      .order("created_at", { ascending: false })
-      .limit(50),
+      .order("created_at", { ascending: false }),
   ]);
 
   const totalSites = totalSitesResult.count ?? 0;
@@ -47,12 +46,12 @@ export default async function AdminDashboardPage() {
     maximumFractionDigits: 0,
   }).format(estimatedRevenue);
 
-  const recentSites = (recentSitesResult.data ?? []) as AdminSiteRow[];
+  const recentSites = (allSitesResult.data ?? []) as AdminSiteRow[];
   const fetchError =
     totalSitesResult.error?.message ||
     paidSitesResult.error?.message ||
     premiumPaidSitesResult.error?.message ||
-    recentSitesResult.error?.message ||
+    allSitesResult.error?.message ||
     null;
 
   return (
