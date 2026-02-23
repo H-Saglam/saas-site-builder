@@ -31,6 +31,9 @@ export async function updateSiteStatus(siteId: string, newStatus: string, isPrem
   if (!normalizedStatus) {
     throw new Error("Desteklenmeyen site durumu.");
   }
+  if (isPremium && normalizedStatus !== "active") {
+    throw new Error("Premium yalnızca aktif durum ile kullanılabilir.");
+  }
 
   const supabase = getServiceSupabase();
   const updatedAt = new Date().toISOString();
