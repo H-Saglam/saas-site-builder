@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { getServiceSupabase } from "@/lib/supabase";
+import { isSafeUrl } from "@/lib/security";
 import JSZip from "jszip";
 import type { SiteData, SlideData } from "@/lib/types";
 import { siteRowToData } from "@/lib/mappers";
@@ -399,13 +400,14 @@ export async function GET(
     // Fetch all in parallel
     const downloadPromises = Array.from(uniqueUrls).map(async (url, index) => {
       try {
-        // SSRF Protection: Only allow valid https URLs
-        if (!url.startsWith("https://")) {
-          console.warn(`Skipping non-https or invalid URL: ${url}`);
+        // SSRF Protection: Validate against allowed domains
+        if (!isSafeUrl(url)) {
+          console.warn(`Skipping potentially unsafe or external URL: ${url}`);
           return;
         }
 
-        const response = await fetch(url);
+        // Prevent redirect-based SSRF by setting redirect: 'error'
+        const response = await fetch(url, { redirect: "error" });
         if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
 
         const arrayBuffer = await response.arrayBuffer();
