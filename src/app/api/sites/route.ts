@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
         package_type: "standard",
         is_private: isPrivate,
         password_hash: passwordHash,
+        expires_at: null,
       })
       .select()
       .single();
@@ -151,10 +152,10 @@ export async function PUT(request: NextRequest) {
 
     const supabase = getServiceSupabase();
 
-    // Sahiplik kontrolü ve düzenleme süresi kontrolü (1 hafta)
+    // Sahiplik kontrolü + canlı site düzenleme süresi kontrolü
     const { data: existing } = await supabase
       .from("sites")
-      .select("user_id, created_at")
+      .select("user_id, status, expires_at")
       .eq("id", siteId)
       .single();
 
@@ -162,16 +163,15 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
     }
 
-    // 1 hafta (7 gün) düzenleme süresi sınırı
-    const createdAt = new Date(existing.created_at);
-    const now = new Date();
-    const daysSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-
-    if (daysSinceCreation > 7) {
-      return NextResponse.json(
-        { error: "Düzenleme süresi doldu. Site oluşturulduktan sonra sadece 1 hafta içinde düzenlenebilir." },
-        { status: 403 }
-      );
+    // Sadece canlı sitelerde (active) expires_at bazlı düzenleme limiti uygulanır.
+    if (existing.status === "active" && existing.expires_at) {
+      const expiresAt = new Date(existing.expires_at);
+      if (!Number.isNaN(expiresAt.getTime()) && expiresAt < new Date()) {
+        return NextResponse.json(
+          { error: "Canlı sitenin yayın süresi dolduğu için düzenleme yapılamaz." },
+          { status: 403 }
+        );
+      }
     }
 
     // Eğer şifre güncelleniyorsa hash'le

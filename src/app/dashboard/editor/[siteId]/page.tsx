@@ -111,8 +111,9 @@ export default function EditSitePage() {
   const [saving, setSaving] = useState(false);
   const [site, setSite] = useState<SiteData | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [hasEditLimit, setHasEditLimit] = useState(false);
   const [editExpired, setEditExpired] = useState(false);
-  const [daysRemaining, setDaysRemaining] = useState<number>(0);
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
 
   // --- form state ---
   const [slug, setSlug] = useState("");
@@ -179,14 +180,19 @@ export default function EditSitePage() {
         );
         setSelectedMusicId(s.musicId ?? null);
 
-        // Düzenleme süresi kontrolü (1 hafta)
-        if (raw.created_at) {
-          const createdAt = new Date(raw.created_at);
-          const now = new Date();
-          const daysSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-          const remaining = Math.max(0, 7 - daysSinceCreation);
-          setDaysRemaining(Math.ceil(remaining));
-          setEditExpired(daysSinceCreation > 7);
+        // Sadece canlı (active) sitelerde expires_at bazlı düzenleme limiti uygulanır.
+        setHasEditLimit(false);
+        setEditExpired(false);
+        setDaysRemaining(null);
+        if (s.status === "active" && s.expiresAt) {
+          const expiresAt = new Date(s.expiresAt);
+          if (!Number.isNaN(expiresAt.getTime())) {
+            const diffMs = expiresAt.getTime() - Date.now();
+            const remainingDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+            setHasEditLimit(true);
+            setDaysRemaining(remainingDays);
+            setEditExpired(diffMs <= 0);
+          }
         }
       } catch {
         alert("Site yüklenirken hata oluştu.");
@@ -519,18 +525,18 @@ export default function EditSitePage() {
               <div>
                 <p className="font-semibold">Düzenleme süresi doldu</p>
                 <p className="text-sm mt-1">
-                  Site oluşturulduktan sonra sadece 1 hafta içinde düzenlenebilir. Artık bu siteyi güncelleyemezsiniz.
+                  Canlı sitenin yayın süresi dolduğu için artık bu siteyi güncelleyemezsiniz.
                 </p>
               </div>
             </div>
           )}
-          {!isNewSite && !editExpired && daysRemaining <= 3 && daysRemaining > 0 && (
+          {!isNewSite && hasEditLimit && !editExpired && daysRemaining !== null && daysRemaining <= 3 && daysRemaining > 0 && (
             <div className="bg-amber-50 border border-amber-200 text-amber-700 px-5 py-4 rounded-xl flex items-start gap-3">
               <Info className="h-5 w-5 mt-0.5 shrink-0" />
               <div>
                 <p className="font-semibold">Düzenleme süreniz yakında doluyor</p>
                 <p className="text-sm mt-1">
-                  Bu siteyi düzenleyebilmeniz için {daysRemaining} gün kaldı. Değişiklikleri en kısa sürede kaydetmeyi unutmayın.
+                  Bu canlı siteyi düzenleyebilmeniz için {daysRemaining} gün kaldı. Değişiklikleri en kısa sürede kaydetmeyi unutmayın.
                 </p>
               </div>
             </div>
