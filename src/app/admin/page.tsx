@@ -3,18 +3,26 @@ import { getServiceSupabase } from "@/lib/supabase";
 import AdminSitesTable, { type AdminSiteRow } from "./AdminSitesTable";
 import AdminTopNav from "./AdminTopNav";
 
-const BASE_PACKAGE_PRICE_TRY = 299;
 const PAID_STATUSES = ["active", "paid", "premium", "standard"] as const;
+const PACKAGE_PRICES_TRY = {
+  standard: 149,
+  premium: 249,
+} as const;
 
 export default async function AdminDashboardPage() {
   const supabase = getServiceSupabase();
 
-  const [totalSitesResult, paidSitesResult, recentSitesResult] = await Promise.all([
+  const [totalSitesResult, paidSitesResult, premiumPaidSitesResult, recentSitesResult] = await Promise.all([
     supabase.from("sites").select("*", { count: "exact", head: true }),
     supabase
       .from("sites")
       .select("*", { count: "exact", head: true })
       .in("status", [...PAID_STATUSES]),
+    supabase
+      .from("sites")
+      .select("*", { count: "exact", head: true })
+      .in("status", [...PAID_STATUSES])
+      .eq("package_type", "premium"),
     supabase
       .from("sites")
       .select("id, slug, recipient_name, template_id, status, created_at")
@@ -24,12 +32,15 @@ export default async function AdminDashboardPage() {
 
   const totalSites = totalSitesResult.count ?? 0;
   const paidSites = paidSitesResult.count ?? 0;
+  const premiumPaidSites = premiumPaidSitesResult.count ?? 0;
+  const standardPaidSites = Math.max(0, paidSites - premiumPaidSites);
   const conversionRate = totalSites > 0 ? (paidSites / totalSites) * 100 : 0;
   const formattedConversionRate = `${conversionRate.toLocaleString("tr-TR", {
     minimumFractionDigits: 1,
     maximumFractionDigits: 2,
   })}%`;
-  const estimatedRevenue = paidSites * BASE_PACKAGE_PRICE_TRY;
+  const estimatedRevenue =
+    standardPaidSites * PACKAGE_PRICES_TRY.standard + premiumPaidSites * PACKAGE_PRICES_TRY.premium;
   const formattedRevenue = new Intl.NumberFormat("tr-TR", {
     style: "currency",
     currency: "TRY",
@@ -40,6 +51,7 @@ export default async function AdminDashboardPage() {
   const fetchError =
     totalSitesResult.error?.message ||
     paidSitesResult.error?.message ||
+    premiumPaidSitesResult.error?.message ||
     recentSitesResult.error?.message ||
     null;
 
@@ -113,7 +125,7 @@ export default async function AdminDashboardPage() {
                 <p className="text-sm text-muted-foreground">Toplam Ciro (Tahmini)</p>
                 <p className="mt-2 text-3xl font-bold text-foreground">{formattedRevenue}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {paidSites} x {BASE_PACKAGE_PRICE_TRY} TL baz fiyat
+                  Std {standardPaidSites} x {PACKAGE_PRICES_TRY.standard} TL + Prm {premiumPaidSites} x {PACKAGE_PRICES_TRY.premium} TL
                 </p>
               </div>
               <span className="rounded-lg bg-slate-100 p-2 text-slate-700">
