@@ -41,7 +41,7 @@ export function generateSlideHTML(
   switch (slide.type) {
     case "cover":
       return `
-    <section class="slide${activeClass}" style="background:${gradient}">
+    <section class="slide${activeClass}" style="background:${esc(gradient)}">
       ${badge}
       <div class="content">
         <h1 class="animate-up">${esc(site.recipientName)}...</h1>
@@ -53,7 +53,7 @@ export function generateSlideHTML(
     case "photo": {
       const localUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
       return `
-    <section class="slide${activeClass}" style="background:${gradient}">
+    <section class="slide${activeClass}" style="background:${esc(gradient)}">
       ${badge}
       <div class="content">
         <div class="photo-frame animate-pop">
@@ -73,7 +73,7 @@ export function generateSlideHTML(
         })
         .join("\n          ");
       return `
-    <section class="slide${activeClass}" style="background:${gradient}">
+    <section class="slide${activeClass}" style="background:${esc(gradient)}">
       ${badge}
       <div class="content">
         <div class="collage">
@@ -87,7 +87,7 @@ export function generateSlideHTML(
 
     case "text":
       return `
-    <section class="slide slide-text${activeClass}" style="background:${gradient}">
+    <section class="slide slide-text${activeClass}" style="background:${esc(gradient)}">
       ${badge}
       <div class="content">
         <div class="text-content">
@@ -100,7 +100,7 @@ export function generateSlideHTML(
     case "finale": {
       const localUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
       return `
-    <section class="slide slide-finale${activeClass}" style="background:${gradient}">
+    <section class="slide slide-finale${activeClass}" style="background:${esc(gradient)}">
       ${badge}
       <div class="content">
         ${localUrl ? `
@@ -139,7 +139,7 @@ export function generateOfflineHTML(site: SiteData, urlToLocalMap: Record<string
 
   const musicUrl = site.musicTrack?.fileUrl || "";
   const musicTag = musicUrl
-    ? `<audio id="bg-music" src="${musicUrl}" loop preload="auto"></audio>`
+    ? `<audio id="bg-music" src="${esc(musicUrl)}" loop preload="auto"></audio>`
     : "";
 
   return `<!DOCTYPE html>
