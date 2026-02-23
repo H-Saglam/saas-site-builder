@@ -20,10 +20,10 @@ SELECT
   package_type,
   is_private,
   music_id,
-  published_at,
   expires_at,
   created_at,
   updated_at,
   COALESCE(jsonb_array_length(slides), 0) as slides_count,
-  slides->0 as first_slide
+  slides->0 as first_slide,
+  published_at
 FROM sites;
