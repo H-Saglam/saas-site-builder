@@ -60,8 +60,9 @@ CREATE INDEX IF NOT EXISTS idx_music_category ON music_library(category);
 ALTER TABLE sites ENABLE ROW LEVEL SECURITY;
 
 -- Herkes okuyabilir (public siteler için gerekli)
-CREATE POLICY "Sites are viewable by everyone" ON sites
-  FOR SELECT USING (true);
+-- Sadece aktif ve herkese açık siteler herkes tarafından okunabilir
+CREATE POLICY "Public active sites are viewable by everyone" ON sites
+  FOR SELECT USING (status = 'active' AND is_private = false);
 
 -- INSERT/UPDATE/DELETE -> Anon key ile YASAKLI
 -- (Service Role key RLS'i otomatik bypass eder, ek policy gerekmez)
