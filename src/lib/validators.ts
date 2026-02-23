@@ -20,7 +20,7 @@ const gradientSchema = z.object({
   to: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Geçerli hex renk giriniz"),
 });
 
-const slideSchema = z.object({
+export const slideSchema = z.object({
   type: z.enum(["cover", "photo", "collage", "text", "finale"]),
   heading: z.string().max(100, "Başlık en fazla 100 karakter olabilir").default(""),
   description: z
