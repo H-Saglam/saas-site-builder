@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { SlideGradient } from "@/lib/types";
 import SongBadge from "./SongBadge";
 
@@ -13,7 +14,7 @@ interface PhotoSlideProps {
   rotateLeft?: boolean;
 }
 
-export default function PhotoSlide({
+function PhotoSlide({
   heading,
   description,
   imageUrl,
@@ -49,3 +50,6 @@ export default function PhotoSlide({
     </section>
   );
 }
+
+// Wrapped in React.memo to prevent unnecessary re-renders when other slides are active.
+export default memo(PhotoSlide);

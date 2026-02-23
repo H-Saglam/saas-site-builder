@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import type { SlideGradient } from "@/lib/types";
 import SongBadge from "./SongBadge";
 import ConfettiCanvas from "./ConfettiCanvas";
@@ -14,7 +15,7 @@ interface CoverSlideProps {
   isFirstTap: boolean;
 }
 
-export default function CoverSlide({
+function CoverSlide({
   recipientName,
   subtitle,
   gradient,
@@ -44,6 +45,9 @@ export default function CoverSlide({
   );
 }
 
+// Wrapped in React.memo to prevent unnecessary re-renders when other slides are active.
+export default memo(CoverSlide);
+
 // ============================================
 // Finale Slide
 // ============================================
@@ -60,7 +64,7 @@ interface FinaleSlideProps {
   onReplay: () => void;
 }
 
-export function FinaleSlide({
+function FinaleSlideComponent({
   heading,
   description,
   imageUrl,
@@ -105,3 +109,6 @@ export function FinaleSlide({
     </section>
   );
 }
+
+// Wrapped in React.memo to prevent unnecessary re-renders when other slides are active.
+export const FinaleSlide = memo(FinaleSlideComponent);
