@@ -235,9 +235,8 @@ function DashboardPageContent() {
         {filteredSites.map((site) => {
           const gradient = site.slides?.[0]?.gradient;
           const coverImage = site.slides?.[0]?.imageUrl;
-          const editRemaining = site.status === "active" ? getTimeRemaining(site.expires_at) : null;
-          const liveRemaining = site.status === "active" ? getTimeRemaining(site.expires_at) : null;
-          const canEdit = site.status !== "active" || (editRemaining ? !editRemaining.expired : true);
+          const expirationState = site.status === "active" ? getTimeRemaining(site.expires_at) : null;
+          const canEdit = site.status !== "active" || (expirationState ? !expirationState.expired : true);
 
           const statusConfig: Record<string, { classes: string; label: string }> = {
             active: { classes: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200", label: "Yayında" },
@@ -315,10 +314,10 @@ function DashboardPageContent() {
                 {/* Countdown badges */}
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
                   {site.status === "active" ? (
-                    !editRemaining?.expired ? (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${editRemaining && editRemaining.hasExpiration && editRemaining.days <= 2 ? "bg-amber-50 text-amber-600" : "bg-muted text-muted-foreground"
+                    !expirationState?.expired ? (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${expirationState && expirationState.hasExpiration && expirationState.days <= 2 ? "bg-amber-50 text-amber-600" : "bg-muted text-muted-foreground"
                         }`}>
-                        <Clock className="w-3 h-3" /> Düzenleme: {editRemaining?.hasExpiration ? `${editRemaining.text} kaldı` : "Süresiz"}
+                        <Clock className="w-3 h-3" /> Düzenleme: {expirationState?.hasExpiration ? `${expirationState.text} kaldı` : "Süresiz"}
                       </span>
                     ) : (
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-red-50 text-red-600 inline-flex items-center gap-1">
@@ -330,10 +329,10 @@ function DashboardPageContent() {
                       <Clock className="w-3 h-3" /> Süresiz düzenleme
                     </span>
                   )}
-                  {liveRemaining && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${liveRemaining.expired ? "bg-red-50 text-red-600" : liveRemaining.hasExpiration && liveRemaining.days <= 30 ? "bg-red-50 text-red-600" : "bg-muted text-muted-foreground"
+                  {expirationState && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${expirationState.expired ? "bg-red-50 text-red-600" : expirationState.hasExpiration && expirationState.days <= 30 ? "bg-red-50 text-red-600" : "bg-muted text-muted-foreground"
                       }`}>
-                      <Globe className="w-3 h-3" /> {liveRemaining.hasExpiration ? (liveRemaining.expired ? "Yayın süresi doldu" : `${liveRemaining.text} kaldı`) : "Süresiz yayın"}
+                      <Globe className="w-3 h-3" /> {expirationState.hasExpiration ? (expirationState.expired ? "Yayın süresi doldu" : `${expirationState.text} kaldı`) : "Süresiz yayın"}
                     </span>
                   )}
                 </div>

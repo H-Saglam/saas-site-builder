@@ -163,7 +163,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
     }
 
-    // Sadece canlı sitelerde (active) expires_at bazlı düzenleme limiti uygulanır.
+    // Bilinçli tercih: düzenleme limiti yalnızca canlı (active) sitelere uygulanır.
+    // Draft/paid/expired gibi canlı olmayan statülerde kullanıcı düzenleyip tekrar yayınlayabilir.
     if (existing.status === "active" && existing.expires_at) {
       const expiresAt = new Date(existing.expires_at);
       if (!Number.isNaN(expiresAt.getTime()) && expiresAt < new Date()) {
