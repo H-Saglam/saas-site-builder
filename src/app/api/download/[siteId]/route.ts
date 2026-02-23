@@ -52,8 +52,8 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData, urlT
     <section class="slide${activeClass}" style="background:${gradient}">
       ${badge}
       <div class="content">
-        <h1 class="animate-up">${site.recipientName}...</h1>
-        <p class="animate-up delay-1">${slide.description}</p>
+        <h1 class="animate-up">${esc(site.recipientName)}...</h1>
+        <p class="animate-up delay-1">${esc(slide.description || "")}</p>
         <div class="tap-hint" id="tap-hint">Başlamak için dokun ❤️</div>
       </div>
     </section>`;
@@ -65,7 +65,7 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData, urlT
       ${badge}
       <div class="content">
         <div class="photo-frame animate-pop">
-          ${localUrl ? `<img src="${localUrl}" alt="${esc(slide.heading)}">` : ""}
+          ${localUrl ? `<img src="${esc(localUrl)}" alt="${esc(slide.heading)}">` : ""}
         </div>
         <h2 class="animate-up">${esc(slide.heading)}</h2>
         ${slide.description ? `<p class="animate-up delay-1">${esc(slide.description)}</p>` : ""}
@@ -77,7 +77,7 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData, urlT
       const imgs = (slide.collageUrls ?? [])
         .map((url: string, i: number) => {
           const localUrl = urlToLocalMap[url] || url;
-          return `<img src="${localUrl}" class="c-img c-${i + 1} animate-pop delay-${i + 1}" alt="Kolaj ${i + 1}">`;
+          return `<img src="${esc(localUrl)}" class="c-img c-${i + 1} animate-pop delay-${i + 1}" alt="Kolaj ${i + 1}">`;
         })
         .join("\n          ");
       return `
@@ -113,7 +113,7 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData, urlT
       <div class="content">
         ${localUrl ? `
         <div class="photo-frame animate-pop">
-          <img src="${localUrl}" alt="Final">
+          <img src="${esc(localUrl)}" alt="Final">
           ${slide.handPointerText ? `<div class="hand-pointer">${esc(slide.handPointerText)}</div>` : ""}
         </div>` : ""}
         <h1 class="animate-up delay-1">${esc(slide.heading)}</h1>
