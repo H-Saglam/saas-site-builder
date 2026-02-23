@@ -1,6 +1,7 @@
 import { Gem, Layers3, ShieldCheck } from "lucide-react";
 import { getServiceSupabase } from "@/lib/supabase";
 import AdminSitesTable, { type AdminSiteRow } from "./AdminSitesTable";
+import AdminTopNav from "./AdminTopNav";
 
 export default async function AdminDashboardPage() {
   const supabase = getServiceSupabase();
@@ -35,11 +36,13 @@ export default async function AdminDashboardPage() {
             <ShieldCheck className="h-4 w-4" />
             Internal Admin
           </div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Platform Dashboard</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Admin Operations</h1>
           <p className="text-sm text-muted-foreground">
-            Sistem metrikleri ve en güncel site kayıtları.
+            Operasyonel metrikler ve manuel site yönetimi.
           </p>
         </header>
+
+        <AdminTopNav />
 
         {fetchError && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
