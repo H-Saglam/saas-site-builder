@@ -78,7 +78,8 @@ export async function POST(request: NextRequest) {
       url: urlData.publicUrl,
       path: data.path,
     });
-  } catch {
+  } catch (error) {
+    console.error("Upload error:", error);
     return NextResponse.json({ error: "Yükleme hatası" }, { status: 500 });
   }
 }
