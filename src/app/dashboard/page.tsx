@@ -204,6 +204,7 @@ function DashboardPageContent() {
             site.status === "active" ? getTimeRemaining(getEditDeadline(editAnchor)) : null;
           const liveRemaining = site.status === "active" ? getTimeRemaining(site.expires_at) : null;
           const canEdit = site.status !== "active" || (editRemaining ? !editRemaining.expired : true);
+          const canDownloadZip = site.status === "active" && site.package_type === "premium";
 
           const st = STATUS_CONFIG[site.status] || { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: site.status };
 
@@ -313,8 +314,8 @@ function DashboardPageContent() {
                     </button>
                   )}
 
-                  {/* ZIP İndir (only for active) */}
-                  {site.status === "active" && (
+                  {/* ZIP İndir (only for active premium) */}
+                  {canDownloadZip && (
                     <a
                       href={`/api/download/${site.id}`}
                       className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-accent transition-colors inline-flex items-center justify-center gap-1.5"
