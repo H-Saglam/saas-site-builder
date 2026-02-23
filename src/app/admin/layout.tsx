@@ -3,7 +3,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 function getAllowedAdminEmails(): string[] {
-  const rawEmails = process.env.ADMIN_EMAILS ?? process.env.ADMIN_EMAIL ?? "admin@example.com";
+  const rawEmails = process.env.ADMIN_EMAILS ?? process.env.ADMIN_EMAIL ?? "";
   return rawEmails
     .split(",")
     .map((email) => email.trim().toLowerCase())
@@ -17,10 +17,10 @@ function getPrimaryEmail(user: NonNullable<Awaited<ReturnType<typeof currentUser
 }
 
 function hasAdminMetadataFlag(user: NonNullable<Awaited<ReturnType<typeof currentUser>>>): boolean {
-  const publicMetadata = user.publicMetadata as { isAdmin?: boolean } | null;
+  // Only privateMetadata is trusted for admin authorization.
   const privateMetadata = user.privateMetadata as { isAdmin?: boolean } | null;
 
-  return publicMetadata?.isAdmin === true || privateMetadata?.isAdmin === true;
+  return privateMetadata?.isAdmin === true;
 }
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

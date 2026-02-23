@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { BarChart3, Gem, Layers3, ShieldCheck } from "lucide-react";
+import { getServiceSupabase } from "@/lib/supabase";
 
 type SiteStatus = "draft" | "paid" | "active" | "expired" | "premium";
 
@@ -10,22 +10,6 @@ interface RecentSite {
   template_id: string;
   status: SiteStatus;
   created_at: string;
-}
-
-function getAdminSupabase() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Supabase admin credentials are missing.");
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
 }
 
 function formatDate(value: string): string {
@@ -68,7 +52,7 @@ function getStatusBadge(status: SiteStatus) {
 }
 
 export default async function AdminDashboardPage() {
-  const supabase = getAdminSupabase();
+  const supabase = getServiceSupabase();
 
   const [totalSitesResult, paidPremiumResult, recentSitesResult] = await Promise.all([
     supabase.from("sites").select("*", { count: "exact", head: true }),
