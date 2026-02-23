@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       const packageType = resolvePackageType(site.package_type) ?? "standard";
       const expiresAt = buildExpiresAt(packageType);
 
-      await supabase
+      const { error: activateErr } = await supabase
         .from("sites")
         .update({
           status: "active",
@@ -73,16 +73,23 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", siteId);
+
+      if (activateErr) {
+        console.error("Activation DB error (paid->active):", activateErr);
+        return NextResponse.json({ error: "Aktivasyon başarısız" }, { status: 500 });
+      }
 
       return NextResponse.json({ success: true, status: "active", packageType });
     }
 
+    // WARNING: This branch is dev-only. It must never execute in production.
     // Dev modda draft → seçilen paketle doğrudan aktif et
     if (process.env.NODE_ENV === "development" && site.status === "draft") {
       const packageType = requestedPackageType ?? resolvePackageType(site.package_type) ?? "standard";
       const expiresAt = buildExpiresAt(packageType);
+      console.warn(`[DEV BYPASS] Activating site ${siteId} as ${packageType}`);
 
-      await supabase
+      const { error: activateErr } = await supabase
         .from("sites")
         .update({
           status: "active",
@@ -91,6 +98,11 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", siteId);
+
+      if (activateErr) {
+        console.error("Activation DB error (dev draft->active):", activateErr);
+        return NextResponse.json({ error: "Aktivasyon başarısız" }, { status: 500 });
+      }
 
       return NextResponse.json({ success: true, status: "active", packageType, devBypass: true });
     }
