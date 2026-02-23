@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Plus,
@@ -216,10 +217,13 @@ function DashboardPageContent() {
                 }}
               >
                 {coverImage ? (
-                  <img
+                  <Image
                     src={coverImage}
                     alt={site.title}
-                    className="w-full h-full object-cover group-hover/cover:scale-105 transition-transform duration-500"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                    className="object-cover group-hover/cover:scale-105 transition-transform duration-500"
+                    unoptimized
                   />
                 ) : (
                   <div
