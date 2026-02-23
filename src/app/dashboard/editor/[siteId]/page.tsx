@@ -73,6 +73,32 @@ const SLIDE_TYPE_LABELS: Record<SlideType, string> = {
   finale: "Final",
 };
 
+const SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const HEADING_REQUIRED_TYPES = new Set<SlideType>(["text", "finale"]);
+
+function getValidationMessage(details: unknown): string | null {
+  if (!details || typeof details !== "object") return null;
+  const parsed = details as {
+    formErrors?: unknown;
+    fieldErrors?: Record<string, unknown>;
+  };
+
+  if (Array.isArray(parsed.formErrors)) {
+    const formError = parsed.formErrors.find((msg) => typeof msg === "string" && msg.trim().length > 0);
+    if (typeof formError === "string") return formError;
+  }
+
+  if (parsed.fieldErrors && typeof parsed.fieldErrors === "object") {
+    for (const [field, fieldErrors] of Object.entries(parsed.fieldErrors)) {
+      if (!Array.isArray(fieldErrors)) continue;
+      const fieldError = fieldErrors.find((msg) => typeof msg === "string" && msg.trim().length > 0);
+      if (typeof fieldError === "string") return `${field}: ${fieldError}`;
+    }
+  }
+
+  return null;
+}
+
 export default function EditSitePage() {
   const router = useRouter();
   const params = useParams();
@@ -243,10 +269,51 @@ export default function EditSitePage() {
 
   // --- save ---
   async function handleSave() {
+    const normalizedSlug = slug.trim().toLowerCase();
+    const normalizedTitle = title.trim();
+    const normalizedRecipientName = recipientName.trim();
+
+    if (isNewSite) {
+      if (normalizedTitle.length < 2) {
+        alert("Site başlığı en az 2 karakter olmalı");
+        return;
+      }
+      if (normalizedRecipientName.length < 1) {
+        alert("Alıcı adı boş olamaz");
+        return;
+      }
+      if (normalizedSlug.length < 3) {
+        alert("URL en az 3 karakter olmalı");
+        return;
+      }
+      if (!SLUG_REGEX.test(normalizedSlug)) {
+        alert("URL sadece küçük harf, rakam ve tire (-) içerebilir");
+        return;
+      }
+      if (slugAvailable === false) {
+        alert("Bu URL zaten kullanılıyor");
+        return;
+      }
+    }
+
+    if (isPrivate && (!password || password.length < 4)) {
+      alert("Şifre en az 4 karakter olmalı");
+      return;
+    }
+
     if (isPrivate && password && password !== confirmPassword) {
       alert("Şifreler eşleşmiyor");
       return;
     }
+
+    const missingRequiredHeading = slides.find(
+      (slide) => HEADING_REQUIRED_TYPES.has(slide.type) && slide.heading.trim().length === 0
+    );
+    if (missingRequiredHeading) {
+      alert(`${SLIDE_TYPE_LABELS[missingRequiredHeading.type]} slide'ı için başlık zorunlu`);
+      return;
+    }
+
     setSaving(true);
     try {
       // process slides for saving
@@ -279,9 +346,9 @@ export default function EditSitePage() {
       if (isNewSite) {
         // --- CREATE ---
         const body = {
-          title,
-          recipientName,
-          slug,
+          title: normalizedTitle,
+          recipientName: normalizedRecipientName,
+          slug: normalizedSlug,
           slides: processedSlides,
           musicId: selectedMusicId,
           isPrivate,
@@ -296,7 +363,10 @@ export default function EditSitePage() {
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Bir hata oluştu");
+        if (!res.ok) {
+          const validationMessage = getValidationMessage(data.details);
+          throw new Error(validationMessage ?? data.error ?? "Bir hata oluştu");
+        }
         router.push(`/dashboard?created=${data.site.slug}`);
       } else {
         // --- EDIT ---
@@ -349,6 +419,15 @@ export default function EditSitePage() {
   const filteredMusicTracks = selectedCategory === "all"
     ? musicTracks
     : musicTracks.filter((t) => t.category === selectedCategory);
+  const normalizedCreateSlug = slug.trim().toLowerCase();
+  const isCreateReady =
+    title.trim().length >= 2 &&
+    recipientName.trim().length >= 1 &&
+    normalizedCreateSlug.length >= 3 &&
+    SLUG_REGEX.test(normalizedCreateSlug) &&
+    slugAvailable !== false &&
+    slides.every((slide) => !HEADING_REQUIRED_TYPES.has(slide.type) || slide.heading.trim().length > 0) &&
+    (!isPrivate || (password.length >= 4 && password === confirmPassword));
 
   if (loading) {
     return (
@@ -406,7 +485,7 @@ export default function EditSitePage() {
             </button>
             <button
               onClick={handleSave}
-              disabled={saving || (!isNewSite && editExpired) || (isNewSite && (!title || !recipientName || !slug))}
+              disabled={saving || (!isNewSite && editExpired) || (isNewSite && !isCreateReady)}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-lg hover:bg-accent disabled:opacity-50 transition-colors font-medium"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

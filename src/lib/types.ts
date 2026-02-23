@@ -139,7 +139,7 @@ export interface SiteFormData {
   recipientName: string;
   slug: string;
   slides: SlideFormData[];
-  musicId: string;
+  musicId: string | null;
   isPrivate: boolean;
   password?: string;
   confirmPassword?: string;

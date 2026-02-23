@@ -22,10 +22,7 @@ const gradientSchema = z.object({
 
 const slideSchema = z.object({
   type: z.enum(["cover", "photo", "collage", "text", "finale"]),
-  heading: z
-    .string()
-    .min(1, "Başlık boş olamaz")
-    .max(100, "Başlık en fazla 100 karakter olabilir"),
+  heading: z.string().max(100, "Başlık en fazla 100 karakter olabilir").default(""),
   description: z
     .string()
     .max(500, "Açıklama en fazla 500 karakter olabilir")
@@ -33,9 +30,17 @@ const slideSchema = z.object({
   gradient: gradientSchema,
   imageUrl: z.string().url("Geçerli resim URL'si giriniz").optional().or(z.literal("")),
   collageUrls: z
-    .array(z.string().url("Geçerli resim URL'si giriniz"))
+    .array(z.string().url("Geçerli resim URL'si giriniz").or(z.literal("")))
     .optional(),
   handPointerText: z.string().max(50).optional(),
+}).superRefine((slide, ctx) => {
+  if ((slide.type === "text" || slide.type === "finale") && slide.heading.trim().length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["heading"],
+      message: "Bu slide tipi için başlık zorunlu",
+    });
+  }
 });
 
 // ============================================
@@ -57,7 +62,7 @@ export const siteFormSchema = z
       .array(slideSchema)
       .min(3, "En az 3 slide olmalı")
       .max(12, "En fazla 12 slide olabilir"),
-    musicId: z.string().min(1, "Bir müzik seçmelisiniz"),
+    musicId: z.string().min(1, "Geçersiz müzik seçimi").nullable().optional(),
     isPrivate: z.boolean().default(false),
     password: z
       .string()
