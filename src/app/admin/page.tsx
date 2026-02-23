@@ -1,57 +1,85 @@
 import { BarChart3, Gem, Layers3, Percent, ShieldCheck, WalletCards } from "lucide-react";
 import { getServiceSupabase } from "@/lib/supabase";
+import { TEMPLATES } from "@/lib/templates";
 import AdminSitesTable, { type AdminSiteRow } from "./AdminSitesTable";
 
-const PACKAGE_PRICE_TRY = 149;
+const PACKAGE_PRICES_TRY = {
+  standard: 149,
+  premium: 249,
+} as const;
 
 export default async function AdminDashboardPage() {
   const supabase = getServiceSupabase();
+  const templateIds = TEMPLATES.map((template) => template.id);
 
-  const [draftSitesResult, paidSitesResult, templateRowsResult, recentSitesResult] = await Promise.all([
+  const [
+    totalSitesResult,
+    draftSitesResult,
+    paidSitesResult,
+    premiumPaidSitesResult,
+    recentSitesResult,
+    templateCountResults,
+  ] = await Promise.all([
+    supabase.from("sites").select("*", { count: "exact", head: true }),
     supabase.from("sites").select("*", { count: "exact", head: true }).eq("status", "draft"),
     supabase
       .from("sites")
       .select("*", { count: "exact", head: true })
-      .or("status.eq.active,status.eq.premium,package_type.eq.premium"),
-    supabase.from("sites").select("template_id"),
+      .in("status", ["active", "premium"]),
+    supabase
+      .from("sites")
+      .select("*", { count: "exact", head: true })
+      .in("status", ["active", "premium"])
+      .eq("package_type", "premium"),
     supabase
       .from("sites")
       .select("id, slug, recipient_name, template_id, status, created_at")
       .order("created_at", { ascending: false })
       .limit(50),
+    Promise.all(
+      templateIds.map((templateId) =>
+        supabase
+          .from("sites")
+          .select("*", { count: "exact", head: true })
+          .eq("template_id", templateId)
+      )
+    ),
   ]);
 
+  const totalSites = totalSitesResult.count ?? 0;
   const draftSites = draftSitesResult.count ?? 0;
   const paidSites = paidSitesResult.count ?? 0;
-  const totalSites = draftSites + paidSites;
+  const premiumPaidSites = premiumPaidSitesResult.count ?? 0;
+  const standardPaidSites = Math.max(0, paidSites - premiumPaidSites);
   const conversionRate = totalSites > 0 ? (paidSites / totalSites) * 100 : 0;
   const formattedConversionRate = `${conversionRate.toLocaleString("tr-TR", {
     minimumFractionDigits: 1,
     maximumFractionDigits: 2,
   })}%`;
-  const estimatedRevenue = paidSites * PACKAGE_PRICE_TRY;
+  const estimatedRevenue =
+    standardPaidSites * PACKAGE_PRICES_TRY.standard + premiumPaidSites * PACKAGE_PRICES_TRY.premium;
   const formattedRevenue = new Intl.NumberFormat("tr-TR", {
     style: "currency",
     currency: "TRY",
     maximumFractionDigits: 0,
   }).format(estimatedRevenue);
 
-  const templateRows = (templateRowsResult.data ?? []) as { template_id: string | null }[];
-  const templateCounts = templateRows.reduce<Record<string, number>>((acc, row) => {
-    const key = row.template_id?.trim() || "unknown";
-    acc[key] = (acc[key] ?? 0) + 1;
-    return acc;
-  }, {});
-  const sortedTemplatePopularity = Object.entries(templateCounts).sort((a, b) => b[1] - a[1]);
+  const templateCountError = templateCountResults.find((result) => result.error)?.error?.message ?? null;
+  const sortedTemplatePopularity = templateIds
+    .map((templateId, index) => [templateId, templateCountResults[index]?.count ?? 0] as const)
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1]);
   const mostPopularTemplate = sortedTemplatePopularity[0] ?? null;
   const topTemplates = sortedTemplatePopularity.slice(0, 3);
 
   const recentSites = (recentSitesResult.data ?? []) as AdminSiteRow[];
   const fetchError =
+    totalSitesResult.error?.message ||
     draftSitesResult.error?.message ||
     paidSitesResult.error?.message ||
-    templateRowsResult.error?.message ||
+    premiumPaidSitesResult.error?.message ||
     recentSitesResult.error?.message ||
+    templateCountError ||
     null;
 
   return (
@@ -78,7 +106,7 @@ export default async function AdminDashboardPage() {
           <article className="bg-card border border-border rounded-xl p-5 shadow-sm">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Toplam Site (Draft + Paid)</p>
+                <p className="text-sm text-muted-foreground">Toplam Site</p>
                 <p className="mt-2 text-3xl font-bold text-foreground">{totalSites}</p>
                 <p className="mt-1 text-xs text-muted-foreground">Draft: {draftSites}</p>
               </div>
@@ -122,7 +150,7 @@ export default async function AdminDashboardPage() {
                 <p className="text-sm text-muted-foreground">Toplam Ciro (Tahmini)</p>
                 <p className="mt-2 text-3xl font-bold text-foreground">{formattedRevenue}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {paidSites} x {PACKAGE_PRICE_TRY} TL
+                  Std {standardPaidSites} x {PACKAGE_PRICES_TRY.standard} TL + Prm {premiumPaidSites} x {PACKAGE_PRICES_TRY.premium} TL
                 </p>
               </div>
               <span className="rounded-lg bg-blue-500/10 p-2 text-blue-600">
