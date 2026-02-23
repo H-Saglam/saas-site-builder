@@ -25,6 +25,7 @@ export function siteRowToData(row: SiteRow, musicTrack?: MusicTrack): SiteData {
     packageType: row.package_type,
     isPrivate: row.is_private,
     passwordHash: row.password_hash,
+    publishedAt: row.published_at,
     expiresAt: row.expires_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

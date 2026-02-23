@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
       standardExpiry.setFullYear(standardExpiry.getFullYear() + 1);
       expiresAt = standardExpiry.toISOString();
     }
+    const activatedAt = new Date().toISOString();
 
     const { data: updatedSite, error } = await supabase
       .from("sites")
@@ -125,7 +126,8 @@ export async function POST(request: NextRequest) {
         status: "active",
         package_type: packageType,
         expires_at: expiresAt,
-        updated_at: new Date().toISOString(),
+        published_at: activatedAt,
+        updated_at: activatedAt,
       })
       .eq("id", siteId)
       .select("id")

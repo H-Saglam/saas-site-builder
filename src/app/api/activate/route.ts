@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
     if (site.status === "paid") {
       const packageType = resolvePackageType(site.package_type) ?? "standard";
       const expiresAt = buildExpiresAt(packageType);
+      const activatedAt = new Date().toISOString();
 
       const { error: activateErr } = await supabase
         .from("sites")
@@ -70,7 +71,8 @@ export async function POST(request: NextRequest) {
           status: "active",
           package_type: packageType,
           expires_at: expiresAt,
-          updated_at: new Date().toISOString(),
+          published_at: activatedAt,
+          updated_at: activatedAt,
         })
         .eq("id", siteId);
 
@@ -87,6 +89,7 @@ export async function POST(request: NextRequest) {
     if (process.env.NODE_ENV === "development" && site.status === "draft") {
       const packageType = requestedPackageType ?? resolvePackageType(site.package_type) ?? "standard";
       const expiresAt = buildExpiresAt(packageType);
+      const activatedAt = new Date().toISOString();
       console.warn(`[DEV BYPASS] Activating site ${siteId} as ${packageType}`);
 
       const { error: activateErr } = await supabase
@@ -95,7 +98,8 @@ export async function POST(request: NextRequest) {
           status: "active",
           package_type: packageType,
           expires_at: expiresAt,
-          updated_at: new Date().toISOString(),
+          published_at: activatedAt,
+          updated_at: activatedAt,
         })
         .eq("id", siteId);
 
