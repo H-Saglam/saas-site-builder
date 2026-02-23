@@ -1,8 +1,12 @@
 import { BarChart3, Gem, LayoutTemplate, Percent, WalletCards } from "lucide-react";
 import { getServiceSupabase } from "@/lib/supabase";
+import { TEMPLATES } from "@/lib/templates";
 import AdminTopNav from "../AdminTopNav";
 
-const PACKAGE_PRICE_TRY = 149;
+const PACKAGE_PRICES_TRY = {
+  standard: 149,
+  premium: 249,
+} as const;
 
 function formatCurrencyTRY(amount: number): string {
   return new Intl.NumberFormat("tr-TR", {
@@ -14,32 +18,50 @@ function formatCurrencyTRY(amount: number): string {
 
 export default async function AdminFinancialPage() {
   const supabase = getServiceSupabase();
+  const templateIds = TEMPLATES.map((template) => template.id);
 
-  const [totalSitesResult, paidSitesResult, templateRowsResult] = await Promise.all([
+  const [totalSitesResult, paidSitesResult, premiumPaidSitesResult, templateCountResults] = await Promise.all([
     supabase.from("sites").select("*", { count: "exact", head: true }),
     supabase
       .from("sites")
       .select("*", { count: "exact", head: true })
-      .or("status.eq.active,status.eq.premium,package_type.eq.premium"),
-    supabase.from("sites").select("template_id"),
+      .in("status", ["active", "premium"]),
+    supabase
+      .from("sites")
+      .select("*", { count: "exact", head: true })
+      .in("status", ["active", "premium"])
+      .eq("package_type", "premium"),
+    Promise.all(
+      templateIds.map((templateId) =>
+        supabase
+          .from("sites")
+          .select("*", { count: "exact", head: true })
+          .eq("template_id", templateId)
+      )
+    ),
   ]);
 
   const totalSites = totalSitesResult.count ?? 0;
   const paidSites = paidSitesResult.count ?? 0;
+  const premiumPaidSites = premiumPaidSitesResult.count ?? 0;
+  const standardPaidSites = Math.max(0, paidSites - premiumPaidSites);
   const conversionRate = totalSites > 0 ? (paidSites / totalSites) * 100 : 0;
-  const estimatedRevenue = paidSites * PACKAGE_PRICE_TRY;
+  const estimatedRevenue =
+    standardPaidSites * PACKAGE_PRICES_TRY.standard + premiumPaidSites * PACKAGE_PRICES_TRY.premium;
 
-  const templateRows = (templateRowsResult.data ?? []) as { template_id: string | null }[];
-  const templatePopularity = templateRows.reduce<Record<string, number>>((acc, row) => {
-    const key = row.template_id?.trim() || "unknown";
-    acc[key] = (acc[key] ?? 0) + 1;
-    return acc;
-  }, {});
-  const sortedTemplates = Object.entries(templatePopularity).sort((a, b) => b[1] - a[1]);
+  const templateCountError = templateCountResults.find((result) => result.error)?.error?.message ?? null;
+  const sortedTemplates = templateIds
+    .map((templateId, index) => [templateId, templateCountResults[index]?.count ?? 0] as const)
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1]);
   const topTemplate = sortedTemplates[0] ?? null;
   const topTemplateCount = topTemplate?.[1] ?? 0;
   const fetchError =
-    totalSitesResult.error?.message || paidSitesResult.error?.message || templateRowsResult.error?.message || null;
+    totalSitesResult.error?.message ||
+    paidSitesResult.error?.message ||
+    premiumPaidSitesResult.error?.message ||
+    templateCountError ||
+    null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -87,7 +109,7 @@ export default async function AdminFinancialPage() {
                 <p className="text-sm text-muted-foreground">Toplam Ciro (Tahmini)</p>
                 <p className="mt-2 text-3xl font-bold text-foreground">{formatCurrencyTRY(estimatedRevenue)}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Paket fiyatı {PACKAGE_PRICE_TRY} TL baz alınmıştır
+                  Std {standardPaidSites} x {PACKAGE_PRICES_TRY.standard} TL + Prm {premiumPaidSites} x {PACKAGE_PRICES_TRY.premium} TL
                 </p>
               </div>
               <span className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600">
