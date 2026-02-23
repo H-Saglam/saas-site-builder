@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import imageCompression from "browser-image-compression";
 import {
   ArrowLeft,
@@ -835,7 +836,14 @@ export default function EditSitePage() {
                     <div className="mt-3">
                       <label className="block text-xs font-medium text-muted-foreground mb-1">Fotoğraf</label>
                       {slide.imageUrl && !slide.imageFile && (
-                        <img src={slide.imageUrl} alt="" className="w-20 h-20 object-cover rounded-lg mb-2" />
+                        <Image
+                          src={slide.imageUrl}
+                          alt=""
+                          width={80}
+                          height={80}
+                          className="w-20 h-20 object-cover rounded-lg mb-2"
+                          unoptimized
+                        />
                       )}
                       <input
                         type="file"
@@ -861,7 +869,14 @@ export default function EditSitePage() {
                         <div key={ci}>
                           <label className="block text-xs font-medium text-muted-foreground mb-1">Foto {ci + 1}</label>
                           {slide.collageUrls?.[ci] && !slide.collageFiles?.[ci] && (
-                            <img src={slide.collageUrls[ci]} alt="" className="w-16 h-16 object-cover rounded mb-1" />
+                            <Image
+                              src={slide.collageUrls[ci]}
+                              alt=""
+                              width={64}
+                              height={64}
+                              className="w-16 h-16 object-cover rounded mb-1"
+                              unoptimized
+                            />
                           )}
                           <input
                             type="file"
@@ -890,7 +905,14 @@ export default function EditSitePage() {
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground mb-1">Fotoğraf</label>
                         {slide.imageUrl && !slide.imageFile && (
-                          <img src={slide.imageUrl} alt="" className="w-20 h-20 object-cover rounded-lg mb-2" />
+                          <Image
+                            src={slide.imageUrl}
+                            alt=""
+                            width={80}
+                            height={80}
+                            className="w-20 h-20 object-cover rounded-lg mb-2"
+                            unoptimized
+                          />
                         )}
                         <input
                           type="file"
