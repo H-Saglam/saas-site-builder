@@ -50,7 +50,7 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData, urlT
   switch (slide.type) {
     case "cover":
       return `
-    <section class="slide${activeClass}" style="background:${gradient}">
+    <section class="slide${activeClass}" style="background:${esc(gradient)}">
       ${badge}
       <div class="content">
         <h1 class="animate-up">${esc(site.recipientName)}...</h1>
@@ -62,7 +62,7 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData, urlT
     case "photo": {
       const localUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
       return `
-    <section class="slide${activeClass}" style="background:${gradient}">
+    <section class="slide${activeClass}" style="background:${esc(gradient)}">
       ${badge}
       <div class="content">
         <div class="photo-frame animate-pop">
@@ -82,7 +82,7 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData, urlT
         })
         .join("\n          ");
       return `
-    <section class="slide${activeClass}" style="background:${gradient}">
+    <section class="slide${activeClass}" style="background:${esc(gradient)}">
       ${badge}
       <div class="content">
         <div class="collage">
@@ -96,7 +96,7 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData, urlT
 
     case "text":
       return `
-    <section class="slide slide-text${activeClass}" style="background:${gradient}">
+    <section class="slide slide-text${activeClass}" style="background:${esc(gradient)}">
       ${badge}
       <div class="content">
         <div class="text-content">
@@ -109,7 +109,7 @@ function generateSlideHTML(slide: SlideData, index: number, site: SiteData, urlT
     case "finale": {
       const localUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
       return `
-    <section class="slide slide-finale${activeClass}" style="background:${gradient}">
+    <section class="slide slide-finale${activeClass}" style="background:${esc(gradient)}">
       ${badge}
       <div class="content">
         ${localUrl ? `
@@ -148,7 +148,7 @@ function generateOfflineHTML(site: SiteData, urlToLocalMap: Record<string, strin
 
   const musicUrl = site.musicTrack?.fileUrl || "";
   const musicTag = musicUrl
-    ? `<audio id="bg-music" src="${musicUrl}" loop preload="auto"></audio>`
+    ? `<audio id="bg-music" src="${esc(musicUrl)}" loop preload="auto"></audio>`
     : "";
 
   return `<!DOCTYPE html>
