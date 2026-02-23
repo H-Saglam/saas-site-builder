@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
 
   // Tüm siteleri getir
   const { data, error } = await supabase
-    .from("sites")
-    .select("id, slug, title, recipient_name, template_id, status, package_type, is_private, created_at, updated_at, expires_at, slides")
+    .from("sites_summary")
+    .select("id, slug, title, recipient_name, template_id, status, package_type, is_private, created_at, updated_at, expires_at, slides_count, first_slide")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 

@@ -29,7 +29,8 @@ interface SiteItem {
   is_private: boolean;
   expires_at: string | null;
   created_at: string;
-  slides: { gradient?: { from: string; to: string }; imageUrl?: string }[];
+  slides_count: number;
+  first_slide: { gradient?: { from: string; to: string }; imageUrl?: string } | null;
 }
 
 type FilterType = "all" | "active" | "draft" | "archived";
@@ -185,8 +186,8 @@ function DashboardPageContent() {
 
         {/* Site Cards */}
         {filteredSites.map((site) => {
-          const gradient = site.slides?.[0]?.gradient;
-          const coverImage = site.slides?.[0]?.imageUrl;
+          const gradient = site.first_slide?.gradient;
+          const coverImage = site.first_slide?.imageUrl;
           const expirationState = site.status === "active" ? getTimeRemaining(site.expires_at) : null;
           const canEdit = site.status !== "active" || (expirationState ? !expirationState.expired : true);
 
@@ -254,7 +255,7 @@ function DashboardPageContent() {
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${st.classes}`}>
                     {st.label}
                   </span>
-                  <span className="text-muted-foreground text-[11px]">{site.slides?.length || 0} slide</span>
+                  <span className="text-muted-foreground text-[11px]">{site.slides_count || 0} slide</span>
                   {site.status === "active" && (
                     <>
                       <span className="text-border text-[11px]">·</span>
