@@ -15,9 +15,11 @@ export const slugSchema = z
 // ============================================
 // Slide Validasyonu
 // ============================================
+const hexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Geçerli hex renk giriniz");
+
 const gradientSchema = z.object({
-  from: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Geçerli hex renk giriniz"),
-  to: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Geçerli hex renk giriniz"),
+  from: hexColorSchema,
+  to: hexColorSchema,
 });
 
 export const slideSchema = z.object({
