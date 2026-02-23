@@ -83,6 +83,20 @@ function getTimeRemaining(expiresAtValue: string | null) {
   return { hasExpiration: true, expired: false, text: `${Math.max(1, hours)} saat`, days };
 }
 
+const STATUS_CONFIG: Record<string, { classes: string; label: string }> = {
+  active: { classes: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200", label: "Yayında" },
+  draft: { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: "Taslak" },
+  paid: { classes: "bg-blue-50 text-blue-600 ring-1 ring-blue-200", label: "Ödendi" },
+  expired: { classes: "bg-red-50 text-red-600 ring-1 ring-red-200", label: "Süresi Doldu" },
+};
+
+const DASHBOARD_FILTERS: { key: FilterType; label: string }[] = [
+  { key: "all", label: "Tüm Projeler" },
+  { key: "active", label: "Aktif" },
+  { key: "draft", label: "Taslaklar" },
+  { key: "archived", label: "Arşiv" },
+];
+
 function DashboardPageContent() {
   const [sites, setSites] = useState<SiteItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,12 +148,6 @@ function DashboardPageContent() {
     return true;
   });
 
-  const filters: { key: FilterType; label: string }[] = [
-    { key: "all", label: "Tüm Projeler" },
-    { key: "active", label: "Aktif" },
-    { key: "draft", label: "Taslaklar" },
-    { key: "archived", label: "Arşiv" },
-  ];
 
   if (loading) {
     return (
@@ -201,7 +209,7 @@ function DashboardPageContent() {
 
       {/* Filter Tabs — Pill / Segment Control */}
       <div className="bg-muted p-1 rounded-xl inline-flex mb-6">
-        {filters.map((f) => (
+        {DASHBOARD_FILTERS.map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
@@ -238,13 +246,7 @@ function DashboardPageContent() {
           const expirationState = site.status === "active" ? getTimeRemaining(site.expires_at) : null;
           const canEdit = site.status !== "active" || (expirationState ? !expirationState.expired : true);
 
-          const statusConfig: Record<string, { classes: string; label: string }> = {
-            active: { classes: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200", label: "Yayında" },
-            draft: { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: "Taslak" },
-            paid: { classes: "bg-blue-50 text-blue-600 ring-1 ring-blue-200", label: "Ödendi" },
-            expired: { classes: "bg-red-50 text-red-600 ring-1 ring-red-200", label: "Süresi Doldu" },
-          };
-          const st = statusConfig[site.status] || { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: site.status };
+          const st = STATUS_CONFIG[site.status] || { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: site.status };
 
           return (
             <div
