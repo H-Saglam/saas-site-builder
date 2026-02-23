@@ -1,3 +1,6 @@
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+export const EDIT_WINDOW_DAYS = 7;
+
 export function getTimeAgo(dateStr: string): string {
   const now = new Date();
   const date = new Date(dateStr);
@@ -51,4 +54,16 @@ export function getTimeRemaining(expiresAtValue: string | null): {
   if (days > 30) return { hasExpiration: true, expired: false, text: `${days} gün`, days };
   if (days > 0) return { hasExpiration: true, expired: false, text: `${days}g ${hours}s`, days };
   return { hasExpiration: true, expired: false, text: `${Math.max(1, hours)} saat`, days };
+}
+
+export function getEditDeadline(
+  publishedAtValue: string | null,
+  windowDays: number = EDIT_WINDOW_DAYS
+): string | null {
+  if (!publishedAtValue) return null;
+
+  const publishedAt = new Date(publishedAtValue);
+  if (Number.isNaN(publishedAt.getTime())) return null;
+
+  return new Date(publishedAt.getTime() + windowDays * DAY_IN_MS).toISOString();
 }

@@ -41,10 +41,12 @@ export async function updateSiteStatus(siteId: string, newStatus: string, isPrem
   const updatePayload: {
     status: SupportedStatus;
     package_type?: "standard" | "premium";
+    published_at: string | null;
     expires_at: string | null;
     updated_at: string;
   } = {
     status: normalizedStatus,
+    published_at: null,
     expires_at: null,
     updated_at: updatedAt,
   };
@@ -52,11 +54,14 @@ export async function updateSiteStatus(siteId: string, newStatus: string, isPrem
   if (isPremium) {
     updatePayload.status = "active";
     updatePayload.package_type = "premium";
+    updatePayload.published_at = updatedAt;
     updatePayload.expires_at = null;
   } else if (normalizedStatus === "active") {
     updatePayload.package_type = "standard";
+    updatePayload.published_at = updatedAt;
     updatePayload.expires_at = buildStandardExpiry();
   } else {
+    updatePayload.published_at = null;
     updatePayload.expires_at = null;
   }
 

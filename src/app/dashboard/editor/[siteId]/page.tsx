@@ -31,6 +31,7 @@ import type {
   SlideType,
 } from "@/lib/types";
 import { GRADIENT_PRESETS, MUSIC_CATEGORIES } from "@/lib/constants";
+import { getEditDeadline, getTimeRemaining } from "@/lib/date-utils";
 import { siteRowToData } from "@/lib/mappers";
 import TemplateView from "@/components/template/TemplateView";
 
@@ -182,18 +183,17 @@ export default function EditSitePage() {
         );
         setSelectedMusicId(s.musicId ?? null);
 
-        // Sadece canlı (active) sitelerde expires_at bazlı düzenleme limiti uygulanır.
+        // Sadece canlı (active) sitelerde yayınlandıktan sonra 7 gün düzenleme limiti uygulanır.
         setHasEditLimit(false);
         setEditExpired(false);
         setDaysRemaining(null);
-        if (s.status === "active" && s.expiresAt) {
-          const expiresAt = new Date(s.expiresAt);
-          if (!Number.isNaN(expiresAt.getTime())) {
-            const diffMs = expiresAt.getTime() - Date.now();
-            const remainingDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        if (s.status === "active") {
+          const editAnchor = s.publishedAt ?? s.createdAt;
+          const editState = getTimeRemaining(getEditDeadline(editAnchor));
+          if (editState.hasExpiration) {
             setHasEditLimit(true);
-            setDaysRemaining(remainingDays);
-            setEditExpired(diffMs <= 0);
+            setDaysRemaining(editState.days);
+            setEditExpired(editState.expired);
           }
         }
       } catch {

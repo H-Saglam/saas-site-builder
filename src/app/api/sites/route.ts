@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import bcrypt from "bcryptjs";
 import { getServiceSupabase } from "@/lib/supabase";
+import { getEditDeadline, getTimeRemaining } from "@/lib/date-utils";
 import { siteFormSchema } from "@/lib/validators";
 
 // GET — Kullanıcının sitelerini getir (tek site veya tümü)
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
   // Tüm siteleri getir
   const { data, error } = await supabase
     .from("sites_summary")
-    .select("id, slug, title, recipient_name, template_id, status, package_type, is_private, created_at, updated_at, expires_at, slides_count, first_slide")
+    .select("id, slug, title, recipient_name, template_id, status, package_type, is_private, created_at, updated_at, published_at, expires_at, slides_count, first_slide")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -155,7 +156,7 @@ export async function PUT(request: NextRequest) {
     // Sahiplik kontrolü + canlı site düzenleme süresi kontrolü
     const { data: existing } = await supabase
       .from("sites")
-      .select("user_id, status, expires_at")
+      .select("user_id, status, published_at, created_at")
       .eq("id", siteId)
       .single();
 
@@ -163,13 +164,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
     }
 
-    // Bilinçli tercih: düzenleme limiti yalnızca canlı (active) sitelere uygulanır.
-    // Draft/paid/expired gibi canlı olmayan statülerde kullanıcı düzenleyip tekrar yayınlayabilir.
-    if (existing.status === "active" && existing.expires_at) {
-      const expiresAt = new Date(existing.expires_at);
-      if (!Number.isNaN(expiresAt.getTime()) && expiresAt < new Date()) {
+    // Düzenleme limiti yalnızca canlı (active) sitelere uygulanır.
+    // Kural: yayınlandıktan sonra 7 gün boyunca düzenleme yapılabilir.
+    if (existing.status === "active") {
+      const editWindowDeadline = getEditDeadline(existing.published_at ?? existing.created_at);
+      const editWindowState = getTimeRemaining(editWindowDeadline);
+      if (editWindowState.hasExpiration && editWindowState.expired) {
         return NextResponse.json(
-          { error: "Canlı sitenin yayın süresi dolduğu için düzenleme yapılamaz." },
+          { error: "Canlı site yayınlandıktan 7 gün sonra düzenleme yapılamaz." },
           { status: 403 }
         );
       }

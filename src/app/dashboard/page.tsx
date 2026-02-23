@@ -17,7 +17,7 @@ import {
   Gift,
   FolderOpen,
 } from "lucide-react";
-import { getTimeAgo, getTimeRemaining } from "@/lib/date-utils";
+import { getEditDeadline, getTimeRemaining } from "@/lib/date-utils";
 
 interface SiteItem {
   id: string;
@@ -28,6 +28,8 @@ interface SiteItem {
   status: string;
   package_type: string;
   is_private: boolean;
+  published_at: string | null;
+  updated_at: string;
   expires_at: string | null;
   created_at: string;
   slides_count: number;
@@ -197,8 +199,11 @@ function DashboardPageContent() {
         {filteredSites.map((site) => {
           const gradient = site.first_slide?.gradient;
           const coverImage = site.first_slide?.imageUrl;
-          const expirationState = site.status === "active" ? getTimeRemaining(site.expires_at) : null;
-          const canEdit = site.status !== "active" || (expirationState ? !expirationState.expired : true);
+          const editAnchor = site.published_at ?? site.created_at;
+          const editRemaining =
+            site.status === "active" ? getTimeRemaining(getEditDeadline(editAnchor)) : null;
+          const liveRemaining = site.status === "active" ? getTimeRemaining(site.expires_at) : null;
+          const canEdit = site.status !== "active" || (editRemaining ? !editRemaining.expired : true);
 
           const st = STATUS_CONFIG[site.status] || { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: site.status };
 
@@ -273,10 +278,10 @@ function DashboardPageContent() {
                 {/* Countdown badges */}
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
                   {site.status === "active" ? (
-                    !expirationState?.expired ? (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${expirationState && expirationState.hasExpiration && expirationState.days <= 2 ? "bg-amber-50 text-amber-600" : "bg-muted text-muted-foreground"
+                    !editRemaining?.expired ? (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${editRemaining && editRemaining.days <= 2 ? "bg-amber-50 text-amber-600" : "bg-muted text-muted-foreground"
                         }`}>
-                        <Clock className="w-3 h-3" /> Düzenleme: {expirationState?.hasExpiration ? `${expirationState.text} kaldı` : "Süresiz"}
+                        <Clock className="w-3 h-3" /> Düzenleme: {editRemaining?.hasExpiration ? `${editRemaining.text} kaldı` : "7 gün"}
                       </span>
                     ) : (
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-red-50 text-red-600 inline-flex items-center gap-1">
@@ -288,10 +293,10 @@ function DashboardPageContent() {
                       <Clock className="w-3 h-3" /> Süresiz düzenleme
                     </span>
                   )}
-                  {expirationState && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${expirationState.expired ? "bg-red-50 text-red-600" : expirationState.hasExpiration && expirationState.days <= 30 ? "bg-red-50 text-red-600" : "bg-muted text-muted-foreground"
+                  {liveRemaining && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${liveRemaining.expired ? "bg-red-50 text-red-600" : liveRemaining.hasExpiration && liveRemaining.days <= 30 ? "bg-red-50 text-red-600" : "bg-muted text-muted-foreground"
                       }`}>
-                      <Globe className="w-3 h-3" /> {expirationState.hasExpiration ? (expirationState.expired ? "Yayın süresi doldu" : `${expirationState.text} kaldı`) : "Süresiz yayın"}
+                      <Globe className="w-3 h-3" /> {liveRemaining.hasExpiration ? (liveRemaining.expired ? "Yayın süresi doldu" : `${liveRemaining.text} kaldı`) : "Süresiz yayın"}
                     </span>
                   )}
                 </div>

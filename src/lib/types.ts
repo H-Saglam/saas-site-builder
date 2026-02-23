@@ -57,6 +57,7 @@ export interface SiteData {
   packageType: PackageType;
   isPrivate: boolean;
   passwordHash: string | null;
+  publishedAt: string | null;
   expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -79,6 +80,7 @@ export interface SiteRow {
   package_type: PackageType;
   is_private: boolean;
   password_hash: string | null;
+  published_at: string | null;
   expires_at: string | null;
   created_at: string;
   updated_at: string;
