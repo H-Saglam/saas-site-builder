@@ -1,8 +1,212 @@
+export type EmailTemplateKey =
+  | "welcome"
+  | "payment_success"
+  | "admin_sale_alert"
+  | "site_expiration_warning"
+  | "edit_window_reminder"
+  | "draft_reminder";
+
+export const EMAIL_TEMPLATE_KEYS: EmailTemplateKey[] = [
+  "welcome",
+  "payment_success",
+  "admin_sale_alert",
+  "site_expiration_warning",
+  "edit_window_reminder",
+  "draft_reminder",
+];
+
 export interface EmailTemplate {
   subject: string;
   html: string;
   text: string;
 }
+
+export interface EmailTemplateContent {
+  subject: string;
+  preheader: string;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  bodyHtml: string;
+  textBody: string;
+  ctaLabel?: string;
+  footerHtml?: string;
+}
+
+export const EMAIL_TEMPLATE_EDITOR_CONFIG: Record<
+  EmailTemplateKey,
+  {
+    label: string;
+    description: string;
+    placeholders: string[];
+  }
+> = {
+  welcome: {
+    label: "Hoş Geldin",
+    description: "Yeni kayıt olan kullanıcıya gönderilir.",
+    placeholders: ["{{first_name}}", "{{dashboard_url}}"],
+  },
+  payment_success: {
+    label: "Ödeme Başarılı",
+    description: "Ödeme tamamlandıktan sonra kullanıcıya gönderilir.",
+    placeholders: [
+      "{{first_name}}",
+      "{{recipient_name}}",
+      "{{package_label}}",
+      "{{amount_try}}",
+      "{{live_site_url}}",
+    ],
+  },
+  admin_sale_alert: {
+    label: "Admin Satış Bildirimi",
+    description: "Başarılı satıştan sonra admin alıcılarına gönderilir.",
+    placeholders: [
+      "{{customer_email}}",
+      "{{amount_try}}",
+      "{{package_label}}",
+      "{{live_site_url}}",
+      "{{site_id}}",
+      "{{order_id}}",
+    ],
+  },
+  site_expiration_warning: {
+    label: "Site Süre Uyarısı",
+    description: "Süresi dolmak üzere olan canlı siteler için hatırlatma gönderilir.",
+    placeholders: [
+      "{{first_name}}",
+      "{{recipient_name}}",
+      "{{days_left}}",
+      "{{expires_at_date}}",
+      "{{live_site_url}}",
+      "{{dashboard_url}}",
+    ],
+  },
+  edit_window_reminder: {
+    label: "Düzenleme Süresi Hatırlatma",
+    description: "Canlı sitedeki düzenleme penceresi kapanmadan önce gönderilir.",
+    placeholders: [
+      "{{first_name}}",
+      "{{recipient_name}}",
+      "{{days_left}}",
+      "{{edit_deadline}}",
+      "{{editor_url}}",
+    ],
+  },
+  draft_reminder: {
+    label: "Taslak Tamamlama Hatırlatma",
+    description: "24 saati geçen, yayınlanmamış taslaklar için gönderilir.",
+    placeholders: [
+      "{{first_name}}",
+      "{{recipient_name}}",
+      "{{draft_age_hours}}",
+      "{{dashboard_url}}",
+    ],
+  },
+};
+
+export const DEFAULT_EMAIL_TEMPLATE_CONTENTS: Record<EmailTemplateKey, EmailTemplateContent> = {
+  welcome: {
+    subject: "Hoş geldin! İlk dijital anını oluşturmaya hazır mısın?",
+    preheader: "İlk dijital anını oluştur ve sevdiğine gülümseten bir sürpriz hazırla.",
+    eyebrow: "Özel Bir Anı",
+    title: "İlk hikayeni oluşturmaya başla",
+    subtitle: "Sevdiğine unutulmaz bir dijital hediye hazırlamanın en tatlı zamanı.",
+    bodyHtml: `<p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#334155;">{{first_name}},</p>
+<p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#334155;">Aramıza hoş geldin. Burada sevdiklerin için müziği, fotoğrafları ve hikayeyi bir araya getirip unutulmaz bir dijital hediye oluşturabilirsin.</p>
+<p style="margin:0;font-size:15px;line-height:1.7;color:#334155;">İlk siteni oluşturmak sadece birkaç dakika sürüyor. Hemen dashboard'a geç ve ilk anını yayına hazırla.</p>`,
+    textBody:
+      "{{first_name}}, aramıza hoş geldin.\nİlk dijital hikaye siteni oluşturmak için dashboard'a geç.\nDashboard: {{dashboard_url}}",
+    ctaLabel: "Dashboard'a Git",
+  },
+  payment_success: {
+    subject: "Ödeme başarılı! Siten artık yayında",
+    preheader: "Ödeme tamamlandı. Siten canlı olarak paylaşıma açıldı.",
+    eyebrow: "Ödeme Onayı",
+    title: "Siten artık canlı!",
+    subtitle: "Linki aşağıdan görebilir, sevdiğinle hemen paylaşabilirsin.",
+    bodyHtml: `<p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#334155;">{{first_name}}, ödemen başarıyla tamamlandı. Siten yayına alındı.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #fbcfe8;border-radius:14px;background:#fff1f2;margin:12px 0 14px;">
+  <tr>
+    <td style="padding:14px 16px;">
+      <p style="margin:0 0 6px;font-size:13px;color:#64748b;">Canlı Site Linki</p>
+      <p style="margin:0;font-size:15px;line-height:1.6;font-weight:700;color:#be123c;word-break:break-all;">
+        <a href="{{live_site_url}}" style="color:#be123c;text-decoration:none;">{{live_site_url}}</a>
+      </p>
+    </td>
+  </tr>
+</table>
+<p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">Paket: <strong>{{package_label}}</strong></p>
+<p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">Tutar: <strong>{{amount_try}}</strong></p>
+<p style="margin:0;font-size:14px;line-height:1.7;color:#334155;">Alıcı: <strong>{{recipient_name}}</strong></p>`,
+    textBody:
+      "{{first_name}}, ödemen başarıyla tamamlandı ve siten yayına alındı.\nCanlı site linki: {{live_site_url}}\nPaket: {{package_label}}\nTutar: {{amount_try}}\nAlıcı: {{recipient_name}}",
+    ctaLabel: "Canlı Siteyi Aç",
+  },
+  admin_sale_alert: {
+    subject: "[Satış Bildirimi] Yeni ödeme alındı - {{amount_try}}",
+    preheader: "Yeni satış bildirimi",
+    eyebrow: "Admin Alert",
+    title: "Yeni ödeme alındı",
+    subtitle: "Satış detayları aşağıdaki gibidir.",
+    bodyHtml: `<p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#334155;">Platformda yeni bir satış gerçekleşti.</p>
+<p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">Müşteri E-postası: <strong>{{customer_email}}</strong></p>
+<p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">Tutar: <strong>{{amount_try}}</strong></p>
+<p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">Paket: <strong>{{package_label}}</strong></p>
+<p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">Site ID: <strong>{{site_id}}</strong></p>
+<p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">Sipariş ID: <strong>{{order_id}}</strong></p>
+<p style="margin:0;font-size:14px;line-height:1.7;color:#334155;word-break:break-all;">Canlı URL: <a href="{{live_site_url}}" style="color:#be123c;text-decoration:none;">{{live_site_url}}</a></p>`,
+    textBody:
+      "Yeni satış gerçekleşti.\nMüşteri e-postası: {{customer_email}}\nTutar: {{amount_try}}\nPaket: {{package_label}}\nSite ID: {{site_id}}\nSipariş ID: {{order_id}}\nCanlı URL: {{live_site_url}}",
+  },
+  site_expiration_warning: {
+    subject: "Sitenizin süresi dolmaya {{days_left}} gün kaldı",
+    preheader: "Canlı sitenizin süresi yakında doluyor. Hemen yenileyin.",
+    eyebrow: "Süre Uyarısı",
+    title: "Canlı sitenin süresi dolmak üzere",
+    subtitle: "Hikayenin yayında kalması için yenileme adımını tamamlayın.",
+    bodyHtml: `<p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#334155;">{{first_name}}, <strong>{{recipient_name}}</strong> için yayınladığın sitenin süresi dolmaya yaklaşıyor.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #fbcfe8;border-radius:14px;background:#fff1f2;margin:12px 0 14px;">
+  <tr>
+    <td style="padding:14px 16px;">
+      <p style="margin:0 0 6px;font-size:13px;color:#64748b;">Kalan Süre</p>
+      <p style="margin:0 0 6px;font-size:16px;line-height:1.5;font-weight:700;color:#be123c;">{{days_left}} gün</p>
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#334155;">Bitiş Tarihi: <strong>{{expires_at_date}}</strong></p>
+    </td>
+  </tr>
+</table>
+<p style="margin:0 0 8px;font-size:14px;line-height:1.7;color:#334155;word-break:break-all;">Canlı URL: <a href="{{live_site_url}}" style="color:#be123c;text-decoration:none;">{{live_site_url}}</a></p>
+<p style="margin:0;font-size:14px;line-height:1.7;color:#334155;">Dashboard üzerinden paketi yenileyerek yayını kesintisiz sürdürebilirsin.</p>`,
+    textBody:
+      "{{first_name}}, {{recipient_name}} için yayınladığın sitenin süresi dolmak üzere.\nKalan süre: {{days_left}} gün\nBitiş tarihi: {{expires_at_date}}\nCanlı URL: {{live_site_url}}\nYenileme için dashboard: {{dashboard_url}}",
+    ctaLabel: "Dashboard'da Yenile",
+  },
+  edit_window_reminder: {
+    subject: "Düzenleme süresi bitmeden son {{days_left}} gün",
+    preheader: "Canlı sitenizde düzenleme penceresi yakında kapanacak.",
+    eyebrow: "Düzenleme Hatırlatması",
+    title: "Düzenleme penceresi kapanıyor",
+    subtitle: "Son dokunuşları yapmak için kalan süreyi kaçırma.",
+    bodyHtml: `<p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#334155;">{{first_name}}, <strong>{{recipient_name}}</strong> için yayınladığın sitede düzenleme hakkının bitmesine {{days_left}} gün kaldı.</p>
+<p style="margin:0 0 8px;font-size:14px;line-height:1.7;color:#334155;">Düzenleme Son Tarihi: <strong>{{edit_deadline}}</strong></p>
+<p style="margin:0;font-size:14px;line-height:1.7;color:#334155;">Son değişikliklerini şimdi yapabilir ve siteni güncel tutabilirsin.</p>`,
+    textBody:
+      "{{first_name}}, {{recipient_name}} için yayınladığın sitede düzenleme süresinin bitmesine {{days_left}} gün kaldı.\nDüzenleme son tarihi: {{edit_deadline}}\nDüzenleme linki: {{editor_url}}",
+    ctaLabel: "Şimdi Düzenle",
+  },
+  draft_reminder: {
+    subject: "Taslağın hazır, sürprizi tamamla",
+    preheader: "24 saati geçen taslağını yayına al ve sürprizi tamamla.",
+    eyebrow: "Taslak Hatırlatma",
+    title: "Hazır taslağın seni bekliyor",
+    subtitle: "Küçük bir adımla anını yayına alabilirsin.",
+    bodyHtml: `<p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#334155;">{{first_name}}, oluşturduğun taslak <strong>{{draft_age_hours}} saattir</strong> yayınlanmayı bekliyor.</p>
+<p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#334155;">{{recipient_name}} için hazırladığın hikayeyi tamamlayıp canlıya almak istersen dashboard'dan tek tıkla devam edebilirsin.</p>
+<p style="margin:0;font-size:14px;line-height:1.7;color:#334155;">Sürprizi tamamlamak için seni bekliyoruz.</p>`,
+    textBody:
+      "{{first_name}}, taslağın {{draft_age_hours}} saattir bekliyor. {{recipient_name}} için hazırladığın sürprizi tamamlamak için dashboard'a dön.\nDashboard: {{dashboard_url}}",
+    ctaLabel: "Taslağa Devam Et",
+  },
+};
 
 interface WelcomeEmailInput {
   firstName?: string | null;
@@ -24,6 +228,30 @@ interface AdminSaleAlertInput {
   liveSiteUrl: string;
   siteId: string;
   orderId: string;
+}
+
+interface SiteExpirationWarningInput {
+  firstName?: string | null;
+  recipientName: string;
+  daysLeft: number;
+  expiresAt: string;
+  liveSiteUrl: string;
+  dashboardUrl: string;
+}
+
+interface EditWindowReminderInput {
+  firstName?: string | null;
+  recipientName: string;
+  daysLeft: number;
+  editDeadline: string;
+  editorUrl: string;
+}
+
+interface DraftReminderInput {
+  firstName?: string | null;
+  recipientName: string;
+  draftAgeHours: number;
+  dashboardUrl: string;
 }
 
 interface BaseLayoutInput {
@@ -58,8 +286,74 @@ function formatTRY(amount: number): string {
   }).format(amount);
 }
 
+function formatDateTimeTR(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return new Intl.DateTimeFormat("tr-TR", {
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(date);
+}
+
 function packageLabel(packageType: "standard" | "premium"): string {
   return packageType === "premium" ? "Premium" : "Standard";
+}
+
+function applyPlaceholders(template: string, values: Record<string, string>): string {
+  return template.replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, (_match, key: string) => values[key] ?? "");
+}
+
+function resolveContent(
+  templateKey: EmailTemplateKey,
+  overrideContent?: EmailTemplateContent | null
+): EmailTemplateContent {
+  if (!overrideContent) return DEFAULT_EMAIL_TEMPLATE_CONTENTS[templateKey];
+
+  const defaults = DEFAULT_EMAIL_TEMPLATE_CONTENTS[templateKey];
+  return {
+    subject: overrideContent.subject || defaults.subject,
+    preheader: overrideContent.preheader || defaults.preheader,
+    eyebrow: overrideContent.eyebrow || defaults.eyebrow,
+    title: overrideContent.title || defaults.title,
+    subtitle: overrideContent.subtitle || defaults.subtitle,
+    bodyHtml: overrideContent.bodyHtml || defaults.bodyHtml,
+    textBody: overrideContent.textBody || defaults.textBody,
+    ctaLabel: overrideContent.ctaLabel ?? defaults.ctaLabel,
+    footerHtml: overrideContent.footerHtml ?? defaults.footerHtml,
+  };
+}
+
+function buildTemplateFromContent(params: {
+  content: EmailTemplateContent;
+  variables: Record<string, string>;
+  ctaUrl?: string;
+}): EmailTemplate {
+  const rawVariables = params.variables;
+  const safeVariables = Object.fromEntries(
+    Object.entries(rawVariables).map(([key, value]) => [key, escapeHtml(value)])
+  );
+
+  const subject = applyPlaceholders(params.content.subject, rawVariables);
+  const bodyHtml = applyPlaceholders(params.content.bodyHtml, safeVariables);
+  const text = applyPlaceholders(params.content.textBody, rawVariables);
+
+  const html = buildBaseLayout({
+    preheader: applyPlaceholders(params.content.preheader, rawVariables),
+    eyebrow: applyPlaceholders(params.content.eyebrow, rawVariables),
+    title: applyPlaceholders(params.content.title, rawVariables),
+    subtitle: applyPlaceholders(params.content.subtitle, rawVariables),
+    bodyHtml,
+    ctaLabel: params.content.ctaLabel
+      ? applyPlaceholders(params.content.ctaLabel, rawVariables)
+      : undefined,
+    ctaUrl: params.ctaUrl,
+    footerHtml: params.content.footerHtml
+      ? applyPlaceholders(params.content.footerHtml, safeVariables)
+      : undefined,
+  });
+
+  return { subject, html, text };
 }
 
 function buildBaseLayout({
@@ -91,7 +385,7 @@ function buildBaseLayout({
 
   const finalFooter =
     footerHtml ||
-    `<p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;">Bu e-posta \u00d6zel Bir An\u0131 platformundan g\u00f6nderilmi\u015ftir.</p>`;
+    `<p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;">Bu e-posta Özel Bir Anı platformundan gönderilmiştir.</p>`;
 
   return `<!doctype html>
 <html lang="tr">
@@ -171,151 +465,118 @@ function buildBaseLayout({
 </html>`;
 }
 
-export function buildWelcomeEmailTemplate({
-  firstName,
-  dashboardUrl,
-}: WelcomeEmailInput): EmailTemplate {
-  const userName = firstName?.trim() || "Merhaba";
-  const subject = "Ho\u015f geldin! \u0130lk dijital an\u0131n\u0131 olu\u015fturmaya haz\u0131r m\u0131s\u0131n?";
+export function buildWelcomeEmailTemplate(
+  params: WelcomeEmailInput,
+  overrideContent?: EmailTemplateContent | null
+): EmailTemplate {
+  const userName = params.firstName?.trim() || "Merhaba";
+  const content = resolveContent("welcome", overrideContent);
 
-  const bodyHtml = `
-    <p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#334155;">
-      ${escapeHtml(userName)},
-    </p>
-    <p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#334155;">
-      Aram\u0131za ho\u015f geldin. Burada sevdiklerin i\u00e7in m\u00fczi\u011fi, foto\u011fraflar\u0131 ve hikayeyi bir araya getirip unutulmaz bir dijital hediye olu\u015fturabilirsin.
-    </p>
-    <p style="margin:0;font-size:15px;line-height:1.7;color:#334155;">
-      \u0130lk siteni olu\u015fturmak sadece birka\u00e7 dakika s\u00fcr\u00fcyor. Hemen dashboard'a ge\u00e7 ve ilk an\u0131n\u0131 yay\u0131na haz\u0131rla.
-    </p>
-  `;
-
-  const text = [
-    `${userName}, aram\u0131za ho\u015f geldin.`,
-    "\u0130lk dijital hikaye siteni olu\u015fturmak i\u00e7in dashboard'a ge\u00e7.",
-    `Dashboard: ${dashboardUrl}`,
-  ].join("\n");
-
-  const html = buildBaseLayout({
-    preheader: "\u0130lk dijital an\u0131n\u0131 olu\u015ftur ve sevdi\u011fine g\u00fcl\u00fcmseten bir s\u00fcrpriz haz\u0131rla.",
-    eyebrow: "\u00d6zel Bir An\u0131",
-    title: "\u0130lk hikayeni olu\u015fturmaya ba\u015fla",
-    subtitle: "Sevdi\u011fine unutulmaz bir dijital hediye haz\u0131rlaman\u0131n en tatl\u0131 zaman\u0131.",
-    bodyHtml,
-    ctaLabel: "Dashboard'a Git",
-    ctaUrl: dashboardUrl,
+  return buildTemplateFromContent({
+    content,
+    variables: {
+      first_name: userName,
+      dashboard_url: params.dashboardUrl,
+    },
+    ctaUrl: params.dashboardUrl,
   });
-
-  return { subject, html, text };
 }
 
-export function buildPaymentSuccessEmailTemplate({
-  firstName,
-  recipientName,
-  packageType,
-  amountTRY,
-  liveSiteUrl,
-}: PaymentSuccessEmailInput): EmailTemplate {
-  const userName = firstName?.trim() || "Merhaba";
-  const subject = "\u00d6deme ba\u015far\u0131l\u0131! Siten art\u0131k yay\u0131nda";
+export function buildPaymentSuccessEmailTemplate(
+  params: PaymentSuccessEmailInput,
+  overrideContent?: EmailTemplateContent | null
+): EmailTemplate {
+  const userName = params.firstName?.trim() || "Merhaba";
+  const content = resolveContent("payment_success", overrideContent);
 
-  const bodyHtml = `
-    <p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#334155;">
-      ${escapeHtml(userName)}, \u00f6demen ba\u015far\u0131yla tamamland\u0131. Siten yay\u0131na al\u0131nd\u0131.
-    </p>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #fbcfe8;border-radius:14px;background:#fff1f2;margin:12px 0 14px;">
-      <tr>
-        <td style="padding:14px 16px;">
-          <p style="margin:0 0 6px;font-size:13px;color:#64748b;">Canl\u0131 Site Linki</p>
-          <p style="margin:0;font-size:15px;line-height:1.6;font-weight:700;color:#be123c;word-break:break-all;">
-            <a href="${escapeHtml(liveSiteUrl)}" style="color:#be123c;text-decoration:none;">${escapeHtml(liveSiteUrl)}</a>
-          </p>
-        </td>
-      </tr>
-    </table>
-    <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">
-      Paket: <strong>${escapeHtml(packageLabel(packageType))}</strong>
-    </p>
-    <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">
-      Tutar: <strong>${escapeHtml(formatTRY(amountTRY))}</strong>
-    </p>
-    <p style="margin:0;font-size:14px;line-height:1.7;color:#334155;">
-      Al\u0131c\u0131: <strong>${escapeHtml(recipientName)}</strong>
-    </p>
-  `;
-
-  const text = [
-    `${userName}, \u00f6demen ba\u015far\u0131yla tamamland\u0131 ve siten yay\u0131na al\u0131nd\u0131.`,
-    `Canl\u0131 site linki: ${liveSiteUrl}`,
-    `Paket: ${packageLabel(packageType)}`,
-    `Tutar: ${formatTRY(amountTRY)}`,
-    `Al\u0131c\u0131: ${recipientName}`,
-  ].join("\n");
-
-  const html = buildBaseLayout({
-    preheader: "\u00d6deme tamamland\u0131. Siten canl\u0131 olarak payla\u015f\u0131ma a\u00e7\u0131ld\u0131.",
-    eyebrow: "\u00d6deme Onay\u0131",
-    title: "Siten art\u0131k canl\u0131!",
-    subtitle: "Linki a\u015fa\u011f\u0131dan g\u00f6rebilir, sevdi\u011finle hemen payla\u015fabilirsin.",
-    bodyHtml,
-    ctaLabel: "Canl\u0131 Siteyi A\u00e7",
-    ctaUrl: liveSiteUrl,
+  return buildTemplateFromContent({
+    content,
+    variables: {
+      first_name: userName,
+      recipient_name: params.recipientName,
+      package_label: packageLabel(params.packageType),
+      amount_try: formatTRY(params.amountTRY),
+      live_site_url: params.liveSiteUrl,
+    },
+    ctaUrl: params.liveSiteUrl,
   });
-
-  return { subject, html, text };
 }
 
-export function buildAdminSaleAlertTemplate({
-  customerEmail,
-  amountTRY,
-  packageType,
-  liveSiteUrl,
-  siteId,
-  orderId,
-}: AdminSaleAlertInput): EmailTemplate {
-  const subject = `[Sat\u0131\u015f Bildirimi] Yeni \u00f6deme al\u0131nd\u0131 - ${formatTRY(amountTRY)}`;
+export function buildAdminSaleAlertTemplate(
+  params: AdminSaleAlertInput,
+  overrideContent?: EmailTemplateContent | null
+): EmailTemplate {
+  const content = resolveContent("admin_sale_alert", overrideContent);
 
-  const bodyHtml = `
-    <p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#334155;">
-      Platformda yeni bir sat\u0131\u015f ger\u00e7ekle\u015fti.
-    </p>
-    <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">
-      M\u00fc\u015fteri E-postas\u0131: <strong>${escapeHtml(customerEmail)}</strong>
-    </p>
-    <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">
-      Tutar: <strong>${escapeHtml(formatTRY(amountTRY))}</strong>
-    </p>
-    <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">
-      Paket: <strong>${escapeHtml(packageLabel(packageType))}</strong>
-    </p>
-    <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">
-      Site ID: <strong>${escapeHtml(siteId)}</strong>
-    </p>
-    <p style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#334155;">
-      Sipari\u015f ID: <strong>${escapeHtml(orderId)}</strong>
-    </p>
-    <p style="margin:0;font-size:14px;line-height:1.7;color:#334155;word-break:break-all;">
-      Canl\u0131 URL: <a href="${escapeHtml(liveSiteUrl)}" style="color:#be123c;text-decoration:none;">${escapeHtml(liveSiteUrl)}</a>
-    </p>
-  `;
-
-  const text = [
-    "Yeni sat\u0131\u015f ger\u00e7ekle\u015fti.",
-    `M\u00fc\u015fteri e-postas\u0131: ${customerEmail}`,
-    `Tutar: ${formatTRY(amountTRY)}`,
-    `Paket: ${packageLabel(packageType)}`,
-    `Site ID: ${siteId}`,
-    `Sipari\u015f ID: ${orderId}`,
-    `Canl\u0131 URL: ${liveSiteUrl}`,
-  ].join("\n");
-
-  const html = buildBaseLayout({
-    preheader: "Yeni sat\u0131\u015f bildirimi",
-    eyebrow: "Admin Alert",
-    title: "Yeni \u00f6deme al\u0131nd\u0131",
-    subtitle: "Sat\u0131\u015f detaylar\u0131 a\u015fa\u011f\u0131daki gibidir.",
-    bodyHtml,
+  return buildTemplateFromContent({
+    content,
+    variables: {
+      customer_email: params.customerEmail,
+      amount_try: formatTRY(params.amountTRY),
+      package_label: packageLabel(params.packageType),
+      live_site_url: params.liveSiteUrl,
+      site_id: params.siteId,
+      order_id: params.orderId,
+    },
   });
+}
 
-  return { subject, html, text };
+export function buildSiteExpirationWarningEmailTemplate(
+  params: SiteExpirationWarningInput,
+  overrideContent?: EmailTemplateContent | null
+): EmailTemplate {
+  const userName = params.firstName?.trim() || "Merhaba";
+  const content = resolveContent("site_expiration_warning", overrideContent);
+
+  return buildTemplateFromContent({
+    content,
+    variables: {
+      first_name: userName,
+      recipient_name: params.recipientName,
+      days_left: String(params.daysLeft),
+      expires_at_date: formatDateTimeTR(params.expiresAt),
+      live_site_url: params.liveSiteUrl,
+      dashboard_url: params.dashboardUrl,
+    },
+    ctaUrl: params.dashboardUrl,
+  });
+}
+
+export function buildEditWindowReminderEmailTemplate(
+  params: EditWindowReminderInput,
+  overrideContent?: EmailTemplateContent | null
+): EmailTemplate {
+  const userName = params.firstName?.trim() || "Merhaba";
+  const content = resolveContent("edit_window_reminder", overrideContent);
+
+  return buildTemplateFromContent({
+    content,
+    variables: {
+      first_name: userName,
+      recipient_name: params.recipientName,
+      days_left: String(params.daysLeft),
+      edit_deadline: formatDateTimeTR(params.editDeadline),
+      editor_url: params.editorUrl,
+    },
+    ctaUrl: params.editorUrl,
+  });
+}
+
+export function buildDraftReminderEmailTemplate(
+  params: DraftReminderInput,
+  overrideContent?: EmailTemplateContent | null
+): EmailTemplate {
+  const userName = params.firstName?.trim() || "Merhaba";
+  const content = resolveContent("draft_reminder", overrideContent);
+
+  return buildTemplateFromContent({
+    content,
+    variables: {
+      first_name: userName,
+      recipient_name: params.recipientName,
+      draft_age_hours: String(params.draftAgeHours),
+      dashboard_url: params.dashboardUrl,
+    },
+    ctaUrl: params.dashboardUrl,
+  });
 }

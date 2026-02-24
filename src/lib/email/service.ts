@@ -1,12 +1,20 @@
 import { Resend } from "resend";
 import {
   buildAdminSaleAlertTemplate,
+  buildDraftReminderEmailTemplate,
+  buildEditWindowReminderEmailTemplate,
   buildPaymentSuccessEmailTemplate,
+  type EmailTemplateContent,
+  type EmailTemplateKey,
+  buildSiteExpirationWarningEmailTemplate,
   buildWelcomeEmailTemplate,
 } from "./templates";
 import { getAdminSalesRecipients, getAppBaseUrl, getResendFromEmail } from "./config";
+import { getEmailTemplateContent } from "./overrides";
 
 let cachedClient: Resend | null = null;
+const templateContentCache = new Map<EmailTemplateKey, { content: EmailTemplateContent; expiresAt: number }>();
+const TEMPLATE_CONTENT_CACHE_TTL_MS = 60 * 1000;
 
 function getResendClient(): Resend {
   const apiKey = process.env.RESEND_API_KEY;
@@ -50,11 +58,31 @@ async function sendEmail(options: {
   return response.data;
 }
 
+async function getCachedTemplateContent(templateKey: EmailTemplateKey): Promise<EmailTemplateContent> {
+  const cached = templateContentCache.get(templateKey);
+  const now = Date.now();
+  if (cached && cached.expiresAt > now) {
+    return cached.content;
+  }
+
+  const content = await getEmailTemplateContent(templateKey);
+  templateContentCache.set(templateKey, {
+    content,
+    expiresAt: now + TEMPLATE_CONTENT_CACHE_TTL_MS,
+  });
+  return content;
+}
+
+export async function warmEmailTemplateCache(keys: EmailTemplateKey[]): Promise<void> {
+  await Promise.all(keys.map((key) => getCachedTemplateContent(key)));
+}
+
 export async function sendWelcomeEmail(params: { to: string; firstName?: string | null }) {
+  const content = await getCachedTemplateContent("welcome");
   const template = buildWelcomeEmailTemplate({
     firstName: params.firstName ?? null,
     dashboardUrl: `${getAppBaseUrl()}/dashboard`,
-  });
+  }, content);
 
   return sendEmail({
     to: params.to,
@@ -70,13 +98,14 @@ export async function sendPaymentSuccessEmail(params: {
   amountTRY: number;
   liveSiteUrl: string;
 }) {
+  const content = await getCachedTemplateContent("payment_success");
   const template = buildPaymentSuccessEmailTemplate({
     firstName: params.firstName ?? null,
     recipientName: params.recipientName,
     packageType: params.packageType,
     amountTRY: params.amountTRY,
     liveSiteUrl: params.liveSiteUrl,
-  });
+  }, content);
 
   return sendEmail({
     to: params.to,
@@ -98,6 +127,7 @@ export async function sendAdminSaleAlertEmail(params: {
     return null;
   }
 
+  const content = await getCachedTemplateContent("admin_sale_alert");
   const template = buildAdminSaleAlertTemplate({
     customerEmail: params.customerEmail,
     amountTRY: params.amountTRY,
@@ -105,10 +135,77 @@ export async function sendAdminSaleAlertEmail(params: {
     liveSiteUrl: params.liveSiteUrl,
     siteId: params.siteId,
     orderId: params.orderId,
-  });
+  }, content);
 
   return sendEmail({
     to: recipients,
+    ...template,
+  });
+}
+
+export async function sendSiteExpirationWarningEmail(params: {
+  to: string;
+  firstName?: string | null;
+  recipientName: string;
+  daysLeft: number;
+  expiresAt: string;
+  liveSiteUrl: string;
+}) {
+  const content = await getCachedTemplateContent("site_expiration_warning");
+  const template = buildSiteExpirationWarningEmailTemplate({
+    firstName: params.firstName ?? null,
+    recipientName: params.recipientName,
+    daysLeft: params.daysLeft,
+    expiresAt: params.expiresAt,
+    liveSiteUrl: params.liveSiteUrl,
+    dashboardUrl: `${getAppBaseUrl()}/dashboard`,
+  }, content);
+
+  return sendEmail({
+    to: params.to,
+    ...template,
+  });
+}
+
+export async function sendEditWindowReminderEmail(params: {
+  to: string;
+  firstName?: string | null;
+  recipientName: string;
+  daysLeft: number;
+  editDeadline: string;
+  editorUrl: string;
+}) {
+  const content = await getCachedTemplateContent("edit_window_reminder");
+  const template = buildEditWindowReminderEmailTemplate({
+    firstName: params.firstName ?? null,
+    recipientName: params.recipientName,
+    daysLeft: params.daysLeft,
+    editDeadline: params.editDeadline,
+    editorUrl: params.editorUrl,
+  }, content);
+
+  return sendEmail({
+    to: params.to,
+    ...template,
+  });
+}
+
+export async function sendDraftReminderEmail(params: {
+  to: string;
+  firstName?: string | null;
+  recipientName: string;
+  draftAgeHours: number;
+}) {
+  const content = await getCachedTemplateContent("draft_reminder");
+  const template = buildDraftReminderEmailTemplate({
+    firstName: params.firstName ?? null,
+    recipientName: params.recipientName,
+    draftAgeHours: params.draftAgeHours,
+    dashboardUrl: `${getAppBaseUrl()}/dashboard`,
+  }, content);
+
+  return sendEmail({
+    to: params.to,
     ...template,
   });
 }
