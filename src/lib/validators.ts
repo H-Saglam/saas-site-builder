@@ -22,6 +22,15 @@ const gradientSchema = z.object({
   to: hexColorSchema,
 });
 
+// URL must be http or https
+const safeUrlSchema = z
+  .string()
+  .url("Geçerli resim URL'si giriniz")
+  .refine(
+    (url) => url.startsWith("http://") || url.startsWith("https://"),
+    "Sadece http ve https protokolleri desteklenir"
+  );
+
 export const slideSchema = z.object({
   type: z.enum(["cover", "photo", "collage", "text", "finale"]),
   heading: z.string().max(100, "Başlık en fazla 100 karakter olabilir").default(""),
@@ -30,9 +39,9 @@ export const slideSchema = z.object({
     .max(500, "Açıklama en fazla 500 karakter olabilir")
     .default(""),
   gradient: gradientSchema,
-  imageUrl: z.string().url("Geçerli resim URL'si giriniz").optional().or(z.literal("")),
+  imageUrl: safeUrlSchema.optional().or(z.literal("")),
   collageUrls: z
-    .array(z.string().url("Geçerli resim URL'si giriniz").or(z.literal("")))
+    .array(safeUrlSchema.or(z.literal("")))
     .optional(),
   handPointerText: z.string().max(50).optional(),
 }).superRefine((slide, ctx) => {
