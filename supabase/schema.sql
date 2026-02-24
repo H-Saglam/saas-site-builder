@@ -60,6 +60,9 @@ CREATE INDEX IF NOT EXISTS idx_music_category ON music_library(category);
 ALTER TABLE sites ENABLE ROW LEVEL SECURITY;
 
 -- Public read sadece yayında + public siteler için açık.
+-- NOT: Tüm authenticated site okumaları getServiceSupabase() (service role) ile yapılır,
+-- bu yüzden private/draft siteler bu kısıtlayıcı RLS policy'den etkilenmez.
+-- Anon client ile site okuma yapılırsa private/draft siteler sessizce filtrelenir.
 DROP POLICY IF EXISTS "Sites are viewable by everyone" ON sites;
 DROP POLICY IF EXISTS "Public active sites are viewable by everyone" ON sites;
 CREATE POLICY "Public active sites are viewable by everyone" ON sites

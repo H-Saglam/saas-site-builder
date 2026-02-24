@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { getServiceSupabase } from "@/lib/supabase";
 import type { SiteRow, MusicRow, SlideGradient } from "@/lib/types";
-import { siteRowToData, musicRowToTrack } from "@/lib/types";
+import { siteRowToData, musicRowToTrack } from "@/lib/mappers";
 import PasswordGate from "@/components/template/PasswordGate";
 import SitePageClient from "./SitePageClient";
 
