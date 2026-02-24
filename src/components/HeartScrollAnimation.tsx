@@ -1,6 +1,8 @@
 "use client";
 
-const lines = [
+import { useState, useEffect } from "react";
+
+const LINES_DARK = [
   { color: "rgba(147, 51, 234, 0.20)", height: "2vmax", delay: "0s",   speed: "9s"  },
   { color: "rgba(162, 56, 232, 0.24)", height: "5vmax", delay: "0.5s", speed: "10s" },
   { color: "rgba(186, 66, 214, 0.30)", height: "9vmax", delay: "1.0s", speed: "8s"  },
@@ -11,10 +13,34 @@ const lines = [
   { color: "rgba(172, 92, 232, 0.12)", height: "2vmax", delay: "3.5s", speed: "11s" },
 ];
 
+const LINES_LIGHT = [
+  { color: "rgba(59, 130, 246, 0.20)", height: "2vmax", delay: "0s",   speed: "9s"  },
+  { color: "rgba(99, 102, 241, 0.24)", height: "5vmax", delay: "0.5s", speed: "10s" },
+  { color: "rgba(129, 140, 248, 0.26)", height: "9vmax", delay: "1.0s", speed: "8s"  },
+  { color: "rgba(139, 92, 246, 0.18)", height: "3vmax", delay: "1.5s", speed: "11s" },
+  { color: "rgba(59, 130, 246, 0.16)", height: "6vmax", delay: "2.0s", speed: "9s"  },
+  { color: "rgba(96, 165, 250, 0.14)", height: "4vmax", delay: "2.5s", speed: "10s" },
+  { color: "rgba(139, 92, 246, 0.22)", height: "7vmax", delay: "3.0s", speed: "8s"  },
+  { color: "rgba(99, 102, 241, 0.12)", height: "2vmax", delay: "3.5s", speed: "11s" },
+];
+
 const STRIPE_HEIGHT = "32%";
 const STRIPE_TOP = "34%";
 
 export default function DiagonalLinesBackground() {
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    const update = () => {
+      setIsDark(document.documentElement.getAttribute("data-theme") !== "light");
+    };
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const lines = isDark ? LINES_DARK : LINES_LIGHT;
   return (
     <div
       className="fixed inset-0 z-0 pointer-events-none overflow-hidden flex items-center justify-center"

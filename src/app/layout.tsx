@@ -23,7 +23,14 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="tr">
+      <html lang="tr" suppressHydrationWarning>
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){try{var t=localStorage.getItem("themePreference");if(!t){t=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","dark")}})()`,
+            }}
+          />
+        </head>
         <body className={`${outfit.variable} antialiased`}>{children}</body>
       </html>
     </ClerkProvider>

@@ -220,3 +220,142 @@ body {
     opacity: 1;
   }
 }
+
+/* ===== Theme Transition Guard ===== */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+/* ===== Theme Modes ===== */
+[data-theme="dark"] {
+  --background: #09090B;
+  --foreground: #FAFAFA;
+  --card: #18181B;
+  --card-foreground: #FAFAFA;
+  --sidebar: #18181B;
+  --sidebar-border: #27272A;
+  --muted: #27272A;
+  --muted-foreground: #A1A1AA;
+  --primary: #F43F5E;
+  --primary-foreground: #FFFFFF;
+  --primary-light: #881337;
+  --accent: #FB7185;
+  --destructive: #EF4444;
+  --border: #3F3F46;
+  --ring: #F43F5E;
+}
+
+[data-theme="light"] {
+  --background: #EEF2FF;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --sidebar: #FFFFFF;
+  --sidebar-border: rgba(15, 23, 42, 0.12);
+  --muted: #E2E8F0;
+  --muted-foreground: #475569;
+  --primary: #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --primary-light: #E0E7FF;
+  --accent: #7C3AED;
+  --destructive: #EF4444;
+  --border: rgba(15, 23, 42, 0.12);
+  --ring: #6366F1;
+  --beam-gradient-1: linear-gradient(to right, #60a5fa, #6366f1);
+  --beam-gradient-2: linear-gradient(to right, #6366f1, #8b5cf6);
+}
+
+/* ===== Home Page Light Overrides ===== */
+[data-theme="light"] .home-page,
+[data-theme="light"] .home-page.bg-zinc-950,
+[data-theme="light"] .home-page.bg-zinc-950\/80 {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(96, 165, 250, 0.28), transparent 44%),
+    radial-gradient(circle at 82% 8%, rgba(139, 92, 246, 0.25), transparent 40%),
+    linear-gradient(135deg, #EFF6FF 0%, #E0E7FF 52%, #EDE9FE 100%) !important;
+}
+
+[data-theme="light"] .home-page.bg-zinc-950,
+[data-theme="light"] .home-page.bg-zinc-950\/80,
+[data-theme="light"] .home-page .bg-zinc-950,
+[data-theme="light"] .home-page .bg-zinc-950\/80 {
+  background-color: rgba(239, 246, 255, 0.86) !important;
+}
+
+[data-theme="light"] .home-page .bg-zinc-900\/80,
+[data-theme="light"] .home-page .bg-zinc-800\/50,
+[data-theme="light"] .home-page .bg-zinc-800 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 12px 28px rgba(30, 41, 59, 0.08);
+}
+
+[data-theme="light"] .home-page .text-white {
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .home-page .text-zinc-600,
+[data-theme="light"] .home-page .text-zinc-500,
+[data-theme="light"] .home-page .text-zinc-400 {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .home-page .border-zinc-800,
+[data-theme="light"] .home-page .border-zinc-800\/50,
+[data-theme="light"] .home-page .border-zinc-700\/50,
+[data-theme="light"] .home-page .border-zinc-600 {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+[data-theme="light"] .home-page .bg-white {
+  background-color: #121218 !important;
+}
+
+[data-theme="light"] .home-page .bg-white.text-zinc-900 {
+  color: #FFFFFF !important;
+}
+
+[data-theme="light"] .home-page .bg-white\/10 {
+  background-color: rgba(18, 18, 24, 0.08) !important;
+}
+
+[data-theme="light"] .home-page .hover\:bg-white\/20:hover {
+  background-color: rgba(18, 18, 24, 0.14) !important;
+}
+
+[data-theme="light"] .home-page .shadow-white\/10 {
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.16) !important;
+}
+
+[data-theme="light"] .home-page svg[style*="drop-shadow"] {
+  filter: drop-shadow(0 3px 11px rgba(99, 102, 241, 0.28)) !important;
+}
+
+[data-theme="light"] .home-page .text-rose-400 {
+  color: #6366F1 !important;
+}
+
+[data-theme="light"] .home-page .bg-rose-500 {
+  background-color: #6366F1 !important;
+}
+
+[data-theme="light"] .home-page .hover\:bg-rose-600:hover {
+  background-color: #4F46E5 !important;
+}
+
+[data-theme="light"] .home-page .border-rose-500\/30 {
+  border-color: rgba(99, 102, 241, 0.35) !important;
+}
+
+[data-theme="light"] #themeToggle {
+  background: #FFFFFF !important;
+  border-color: rgba(18, 18, 24, 0.18) !important;
+  color: #121218 !important;
+  box-shadow: 0 6px 18px rgba(17, 24, 39, 0.12);
+}
+
+[data-theme="light"] #themeToggle:hover {
+  background: #F4F4F7 !important;
+}
