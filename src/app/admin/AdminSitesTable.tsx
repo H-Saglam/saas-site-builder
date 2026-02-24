@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { Loader2, Search } from "lucide-react";
 import { updateSiteStatus } from "./actions";
 
 export interface AdminSiteRow {
@@ -52,15 +52,33 @@ function getStatusBadge(status: string) {
   };
 }
 
-export default function AdminSitesTable({ sites }: { sites: AdminSiteRow[] }) {
+export default function AdminSitesTable({
+  sites,
+  fetchLimit,
+}: {
+  sites: AdminSiteRow[];
+  fetchLimit: number;
+}) {
   const [isPending, startTransition] = useTransition();
   const [pendingActionKey, setPendingActionKey] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error" | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredSites = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return sites;
+
+    return sites.filter((site) =>
+      site.slug.toLowerCase().includes(query) ||
+      site.recipient_name.toLowerCase().includes(query) ||
+      site.id.toLowerCase().includes(query)
+    );
+  }, [sites, searchTerm]);
 
   function runStatusAction(
     siteId: string,
-    newStatus: "active" | "draft",
+    newStatus: "active" | "premium" | "draft",
     isPremium: boolean,
     actionKey: string,
     successText: string
@@ -88,12 +106,28 @@ export default function AdminSitesTable({ sites }: { sites: AdminSiteRow[] }) {
   return (
     <section className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-foreground">Recent 50 Sites</h2>
-        {feedbackMessage && (
-          <p className={`text-xs ${feedbackType === "error" ? "text-red-600" : "text-emerald-600"}`}>
-            {feedbackMessage}
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">Recent Sites</h2>
+          <p className="text-xs text-muted-foreground">
+            Son {fetchLimit} kayıt içinde arama yapabilirsiniz.
           </p>
-        )}
+        </div>
+        <div className="flex items-center gap-2">
+          {feedbackMessage && (
+            <p className={`text-xs ${feedbackType === "error" ? "text-red-600" : "text-emerald-600"}`}>
+              {feedbackMessage}
+            </p>
+          )}
+          <label className="relative w-64">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Kişi / slug / site ID ara"
+              className="w-full rounded-lg border border-border bg-card py-2 pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            />
+          </label>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -109,14 +143,14 @@ export default function AdminSitesTable({ sites }: { sites: AdminSiteRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {sites.length === 0 ? (
+            {filteredSites.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-5 py-8 text-center text-muted-foreground">
-                  Gösterilecek site bulunamadı.
+                  Arama kriterine uygun site bulunamadı.
                 </td>
               </tr>
             ) : (
-              sites.map((site) => {
+              filteredSites.map((site) => {
                 const statusBadge = getStatusBadge(site.status);
                 const premiumActionKey = `${site.id}:premium`;
                 const deactivateActionKey = `${site.id}:deactivate`;
@@ -148,7 +182,7 @@ export default function AdminSitesTable({ sites }: { sites: AdminSiteRow[] }) {
                           onClick={() =>
                             runStatusAction(
                               site.id,
-                              "active",
+                              "premium",
                               true,
                               premiumActionKey,
                               "Site premium olarak aktive edildi."
@@ -156,8 +190,14 @@ export default function AdminSitesTable({ sites }: { sites: AdminSiteRow[] }) {
                           }
                           className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                         >
-                          {isPremiumPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                          Make Premium
+                          {isPremiumPending ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Güncelleniyor...
+                            </>
+                          ) : (
+                            "Premium Yap"
+                          )}
                         </button>
                         <button
                           type="button"
@@ -174,8 +214,14 @@ export default function AdminSitesTable({ sites }: { sites: AdminSiteRow[] }) {
                           }}
                           className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
                         >
-                          {isDeactivatePending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                          Deactivate
+                          {isDeactivatePending ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Güncelleniyor...
+                            </>
+                          ) : (
+                            "Taslağa Çevir"
+                          )}
                         </button>
                       </div>
                     </td>

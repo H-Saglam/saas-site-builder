@@ -4,10 +4,10 @@ import { revalidatePath } from "next/cache";
 import { getServiceSupabase } from "@/lib/supabase";
 import { isCurrentUserAdmin } from "@/lib/admin-auth";
 
-type SupportedStatus = "active" | "draft";
+type SupportedStatus = "active" | "premium" | "draft";
 
 function resolveStatus(value: string): SupportedStatus | null {
-  if (value === "active" || value === "draft") return value;
+  if (value === "active" || value === "premium" || value === "draft") return value;
   return null;
 }
 
@@ -31,8 +31,11 @@ export async function updateSiteStatus(siteId: string, newStatus: string, isPrem
   if (!normalizedStatus) {
     throw new Error("Desteklenmeyen site durumu.");
   }
-  if (isPremium && normalizedStatus !== "active") {
-    throw new Error("Premium yalnızca aktif durum ile kullanılabilir.");
+  if (isPremium && normalizedStatus === "draft") {
+    throw new Error("Premium yalnızca premium/aktif durum ile kullanılabilir.");
+  }
+  if (!isPremium && normalizedStatus === "premium") {
+    throw new Error("Premium durum için premium aksiyonu kullanılmalı.");
   }
 
   const supabase = getServiceSupabase();
@@ -45,13 +48,14 @@ export async function updateSiteStatus(siteId: string, newStatus: string, isPrem
     expires_at: string | null;
     updated_at: string;
   } = {
-    status: normalizedStatus,
+    status: normalizedStatus === "premium" ? "active" : normalizedStatus,
     published_at: null,
     expires_at: null,
     updated_at: updatedAt,
   };
 
   if (isPremium) {
+    // Public site rendering currently expects "active" to allow site access.
     updatePayload.status = "active";
     updatePayload.package_type = "premium";
     updatePayload.published_at = updatedAt;
