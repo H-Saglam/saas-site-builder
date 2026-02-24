@@ -51,8 +51,9 @@ Retention cron setup (Vercel):
 
 - Endpoint: `GET /api/cron/retention-notifications`
 - Auth: `Authorization: Bearer ${CRON_SECRET}`
-- Schedule: hourly via `vercel.json`
+- Schedule: every 6 hours via `vercel.json`
 - Idempotency: `site_notification_events` table (migration required)
+- Missing config behavior: if `CRON_SECRET` is not set, endpoint returns `500` with config error
 
 ## Learn More
 

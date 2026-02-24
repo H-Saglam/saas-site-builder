@@ -4,19 +4,27 @@ import { runRetentionNotificationsJob } from "@/lib/notifications/retention";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function isAuthorized(request: NextRequest): boolean {
+function getCronSecret(): string | null {
   const secret = process.env.CRON_SECRET?.trim();
-  if (!secret) {
-    console.error("CRON_SECRET tanımlı değil. Retention cron çağrısı reddedildi.");
-    return false;
-  }
+  return secret && secret.length > 0 ? secret : null;
+}
 
+function isAuthorized(request: NextRequest, secret: string): boolean {
   const authorization = request.headers.get("authorization");
   return authorization === `Bearer ${secret}`;
 }
 
 async function handleRequest(request: NextRequest) {
-  if (!isAuthorized(request)) {
+  const cronSecret = getCronSecret();
+  if (!cronSecret) {
+    console.error("CRON_SECRET tanımlı değil. Retention cron endpoint devre dışı.");
+    return NextResponse.json(
+      { error: "Sunucu konfigürasyon hatası: CRON_SECRET eksik" },
+      { status: 500 }
+    );
+  }
+
+  if (!isAuthorized(request, cronSecret)) {
     return NextResponse.json({ error: "Yetkisiz cron çağrısı" }, { status: 401 });
   }
 

@@ -3,6 +3,7 @@ import {
   sendDraftReminderEmail,
   sendEditWindowReminderEmail,
   sendSiteExpirationWarningEmail,
+  warmEmailTemplateCache,
 } from "@/lib/email";
 import { getAppBaseUrl } from "@/lib/email/config";
 import { getUserPrimaryEmailById } from "@/lib/clerk-users";
@@ -348,6 +349,11 @@ export async function runRetentionNotificationsJob(): Promise<RetentionJobReport
   const errors: string[] = [];
 
   const cleanupReleasedLocks = await cleanupStaleNotificationLocks();
+  await warmEmailTemplateCache([
+    "site_expiration_warning",
+    "edit_window_reminder",
+    "draft_reminder",
+  ]);
 
   const expirationCandidates = await fetchExpirationCandidates(now);
   expirationWarnings.scanned = expirationCandidates.length;

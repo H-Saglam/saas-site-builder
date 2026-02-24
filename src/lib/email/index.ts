@@ -6,5 +6,6 @@ export {
   sendPaymentSuccessEmail,
   sendSiteExpirationWarningEmail,
   sendWelcomeEmail,
+  warmEmailTemplateCache,
 } from "./service";
 export { getEmailTemplateEditorState } from "./overrides";
