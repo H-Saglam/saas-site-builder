@@ -11,6 +11,21 @@ export function esc(str: string): string {
     .replace(/'/g, "&#39;");
 }
 
+// Sanitize URLs to prevent XSS (e.g. javascript:)
+export function sanitizeUrl(url: string): string {
+  if (!url) return "";
+  const trimmed = url.trim();
+  // Allow relative paths (e.g. images/...) or absolute http/https
+  // Block any scheme other than http/https (e.g. javascript:, data:, vbscript:)
+  if (
+    trimmed.match(/^(http:\/\/|https:\/\/)/i) ||
+    !trimmed.includes(":") // Assume relative path if no protocol (no colon)
+  ) {
+    return trimmed;
+  }
+  return "";
+}
+
 export function songBadgeHTML(songTitle?: string, songArtist?: string): string {
   if (!songTitle || !songArtist) return "";
   return `
@@ -51,7 +66,8 @@ export function generateSlideHTML(
     </section>`;
 
     case "photo": {
-      const localUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
+      const rawUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
+      const localUrl = sanitizeUrl(rawUrl);
       return `
     <section class="slide${activeClass}" style="background:${esc(gradient)}">
       ${badge}
@@ -68,7 +84,7 @@ export function generateSlideHTML(
     case "collage": {
       const imgs = (slide.collageUrls ?? [])
         .map((url: string, i: number) => {
-          const localUrl = urlToLocalMap[url] || url;
+          const localUrl = sanitizeUrl(urlToLocalMap[url] || url);
           return `<img src="${esc(localUrl)}" class="c-img c-${i + 1} animate-pop delay-${i + 1}" alt="Kolaj ${i + 1}">`;
         })
         .join("\n          ");
@@ -98,7 +114,8 @@ export function generateSlideHTML(
     </section>`;
 
     case "finale": {
-      const localUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
+      const rawUrl = slide.imageUrl ? urlToLocalMap[slide.imageUrl] || slide.imageUrl : "";
+      const localUrl = sanitizeUrl(rawUrl);
       return `
     <section class="slide slide-finale${activeClass}" style="background:${esc(gradient)}">
       ${badge}
@@ -137,7 +154,7 @@ export function generateOfflineHTML(site: SiteData, urlToLocalMap: Record<string
     .map((slide, index) => generateSlideHTML(slide, index, site, urlToLocalMap))
     .join("\n");
 
-  const musicUrl = site.musicTrack?.fileUrl || "";
+  const musicUrl = sanitizeUrl(site.musicTrack?.fileUrl || "");
   const musicTag = musicUrl
     ? `<audio id="bg-music" src="${esc(musicUrl)}" loop preload="auto"></audio>`
     : "";
