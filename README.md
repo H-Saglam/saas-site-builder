@@ -29,6 +29,7 @@ The project uses [Resend](https://resend.com/) for transactional emails:
 - Welcome email on new user registration (via Clerk webhook)
 - Payment success/receipt email with the live site URL
 - Admin sales alert email for every successful sale
+- Retention notifications (site expiration, edit window reminder, abandoned draft reminder)
 
 Required environment variables:
 
@@ -37,6 +38,7 @@ RESEND_API_KEY=...
 RESEND_FROM_EMAIL=\"Ozel Bir Ani <onboarding@resend.dev>\"
 ADMIN_SALES_EMAILS=\"admin@yourdomain.com\" # optional fallback: ADMIN_EMAILS / ADMIN_EMAIL
 NEXT_PUBLIC_APP_URL=\"https://ozelbirani.com\"
+CRON_SECRET=\"long-random-secret\"
 ```
 
 Clerk webhook setup:
@@ -44,6 +46,13 @@ Clerk webhook setup:
 - Endpoint: `POST /api/clerk-webhook`
 - Event: `user.created`
 - Signing secret env: `CLERK_WEBHOOK_SIGNING_SECRET`
+
+Retention cron setup (Vercel):
+
+- Endpoint: `GET /api/cron/retention-notifications`
+- Auth: `Authorization: Bearer ${CRON_SECRET}`
+- Schedule: hourly via `vercel.json`
+- Idempotency: `site_notification_events` table (migration required)
 
 ## Learn More
 

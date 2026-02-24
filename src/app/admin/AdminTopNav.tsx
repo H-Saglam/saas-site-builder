@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, ShieldCheck } from "lucide-react";
+import { BarChart3, FileText, ShieldCheck } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Operations", icon: ShieldCheck },
   { href: "/admin/financial", label: "Financial", icon: BarChart3 },
+  { href: "/admin/emails", label: "Emails", icon: FileText },
 ];
 
 export default function AdminTopNav() {
