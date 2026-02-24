@@ -8,6 +8,7 @@ const PACKAGE_PRICES_TRY = {
   standard: 149,
   premium: 249,
 } as const;
+const ADMIN_TABLE_FETCH_LIMIT = 500;
 
 export default async function AdminDashboardPage() {
   const supabase = getServiceSupabase();
@@ -26,7 +27,8 @@ export default async function AdminDashboardPage() {
     supabase
       .from("sites")
       .select("id, slug, recipient_name, template_id, status, created_at")
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(ADMIN_TABLE_FETCH_LIMIT),
   ]);
 
   const totalSites = totalSitesResult.count ?? 0;
@@ -134,7 +136,7 @@ export default async function AdminDashboardPage() {
           </article>
         </section>
 
-        <AdminSitesTable sites={recentSites} />
+        <AdminSitesTable sites={recentSites} fetchLimit={ADMIN_TABLE_FETCH_LIMIT} />
       </div>
     </div>
   );
