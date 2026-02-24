@@ -26,7 +26,10 @@ export default function TemplatePickerModal({ open, onClose }: TemplatePickerMod
     useEffect(() => {
         if (!open) return;
         const handleKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape") onClose();
+            if (e.key === "Escape") {
+                setActiveCategory("Tümü");
+                onClose();
+            }
         };
         window.addEventListener("keydown", handleKey);
         return () => window.removeEventListener("keydown", handleKey);
@@ -41,22 +44,22 @@ export default function TemplatePickerModal({ open, onClose }: TemplatePickerMod
         return () => { document.body.style.overflow = ""; };
     }, [open]);
 
-    // Reset category filter when modal opens
-    useEffect(() => {
-        if (open) setActiveCategory("Tümü");
-    }, [open]);
-
     if (!open) return null;
+
+    const handleClose = () => {
+        setActiveCategory("Tümü");
+        onClose();
+    };
 
     const handleSelectTemplate = (template: TemplateInfo) => {
         if (!template.isAvailable) return;
-        onClose();
+        handleClose();
         router.push(`/dashboard/editor/new?template=${template.id}`);
     };
 
     const handleBackdropClick = (e: React.MouseEvent) => {
         if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-            onClose();
+            handleClose();
         }
     };
 
@@ -80,7 +83,7 @@ export default function TemplatePickerModal({ open, onClose }: TemplatePickerMod
                         </p>
                     </div>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <X className="h-5 w-5" />

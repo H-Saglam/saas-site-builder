@@ -59,9 +59,14 @@ CREATE INDEX IF NOT EXISTS idx_music_category ON music_library(category);
 -- Sites tablosu için RLS aktif et
 ALTER TABLE sites ENABLE ROW LEVEL SECURITY;
 
--- Herkes okuyabilir (public siteler için gerekli)
-CREATE POLICY "Sites are viewable by everyone" ON sites
-  FOR SELECT USING (true);
+-- Public read sadece yayında + public siteler için açık.
+-- NOT: Tüm authenticated site okumaları getServiceSupabase() (service role) ile yapılır,
+-- bu yüzden private/draft siteler bu kısıtlayıcı RLS policy'den etkilenmez.
+-- Anon client ile site okuma yapılırsa private/draft siteler sessizce filtrelenir.
+DROP POLICY IF EXISTS "Sites are viewable by everyone" ON sites;
+DROP POLICY IF EXISTS "Public active sites are viewable by everyone" ON sites;
+CREATE POLICY "Public active sites are viewable by everyone" ON sites
+  FOR SELECT USING (status = 'active' AND is_private = false);
 
 -- INSERT/UPDATE/DELETE -> Anon key ile YASAKLI
 -- (Service Role key RLS'i otomatik bypass eder, ek policy gerekmez)

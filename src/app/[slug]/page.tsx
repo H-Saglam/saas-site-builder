@@ -1,12 +1,39 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
 import { getServiceSupabase } from "@/lib/supabase";
-import type { SiteRow, MusicRow } from "@/lib/types";
+import type { SiteRow, MusicRow, SlideGradient } from "@/lib/types";
 import { siteRowToData, musicRowToTrack } from "@/lib/mappers";
+import PasswordGate from "@/components/template/PasswordGate";
 import SitePageClient from "./SitePageClient";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+const DEFAULT_GATE_GRADIENT: SlideGradient = { from: "#2b0a3d", to: "#511a68" };
+
+function getVerifySecret(): Uint8Array | null {
+  const secret = process.env.VERIFY_SECRET;
+  if (!secret || secret.length < 32) return null;
+  return new TextEncoder().encode(secret);
+}
+
+async function isVerifiedForSlug(slug: string): Promise<boolean> {
+  const secret = getVerifySecret();
+  if (!secret) return false;
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get(`site-verify-${slug}`)?.value;
+  if (!token) return false;
+
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    return payload.verified === true && payload.slug === slug;
+  } catch {
+    return false;
+  }
 }
 
 // Dinamik metadata (SEO)
@@ -15,12 +42,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const supabase = getServiceSupabase();
   const { data } = await supabase
     .from("sites")
-    .select("title, recipient_name, slides")
+    .select("title, recipient_name, is_private, status")
     .eq("slug", slug)
     .single();
 
   if (!data) {
     return { title: "Site Bulunamadı" };
+  }
+
+  // Private/inactive sitelerin içeriğini metadata üzerinden ifşa etme.
+  if (data.is_private || data.status !== "active") {
+    return {
+      title: "Özel Site",
+      description: "Bu sayfa erişim doğrulaması gerektirir.",
+    };
   }
 
   return {
@@ -38,22 +73,20 @@ export default async function SitePage({ params }: PageProps) {
   const { slug } = await params;
   const supabase = getServiceSupabase();
 
-  // Site verisini çek
-  const { data: siteRow, error } = await supabase
+  // Önce sadece erişim kararına yetecek alanları çek.
+  const { data: accessRow, error: accessError } = await supabase
     .from("sites")
-    .select("*")
+    .select("id, status, is_private, expires_at, music_id")
     .eq("slug", slug)
     .single();
 
-  if (error || !siteRow) {
+  if (accessError || !accessRow) {
     notFound();
   }
 
-  const site = siteRow as SiteRow;
-
   // Status kontrolü (dev modda atlat)
   const isDev = process.env.NODE_ENV === "development";
-  if (site.status !== "active" && !isDev) {
+  if (accessRow.status !== "active" && !isDev) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white text-center p-6">
         <div>
@@ -66,7 +99,9 @@ export default async function SitePage({ params }: PageProps) {
   }
 
   // Süre kontrolü (premium için expires_at null olabilir, bu durumda süresiz geçerli)
-  const expirationDate = typeof site.expires_at === "string" ? new Date(site.expires_at) : null;
+  const expirationDate = typeof accessRow.expires_at === "string"
+    ? new Date(accessRow.expires_at)
+    : null;
   const hasValidExpirationDate =
     expirationDate !== null && !Number.isNaN(expirationDate.getTime());
   const isExpired = hasValidExpirationDate && expirationDate < new Date();
@@ -84,6 +119,26 @@ export default async function SitePage({ params }: PageProps) {
     );
   }
 
+  if (accessRow.is_private) {
+    const verified = await isVerifiedForSlug(slug);
+    if (!verified) {
+      return <PasswordGate gradient={DEFAULT_GATE_GRADIENT} slug={slug} />;
+    }
+  }
+
+  // Erişim doğrulandıktan sonra tam içeriği çek.
+  const { data: siteRow, error } = await supabase
+    .from("sites")
+    .select("*")
+    .eq("id", accessRow.id)
+    .single();
+
+  if (error || !siteRow) {
+    notFound();
+  }
+
+  const site = siteRow as SiteRow;
+
   // Müzik verisini çek
   let musicTrack = undefined;
   if (site.music_id) {
@@ -100,12 +155,5 @@ export default async function SitePage({ params }: PageProps) {
 
   const siteData = siteRowToData(site, musicTrack);
 
-  return (
-    <SitePageClient
-      siteData={siteData}
-      isPrivate={site.is_private}
-      slug={slug}
-      firstSlideGradient={site.slides[0]?.gradient || { from: "#2b0a3d", to: "#511a68" }}
-    />
-  );
+  return <SitePageClient siteData={siteData} />;
 }

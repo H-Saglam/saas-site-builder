@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { SlideGradient } from "@/lib/types";
 
 interface PasswordGateProps {
   gradient: SlideGradient;
   slug: string;
-  onVerified: () => void;
+  onVerified?: () => void;
 }
 
 export default function PasswordGate({ gradient, slug, onVerified }: PasswordGateProps) {
@@ -32,7 +33,11 @@ export default function PasswordGate({ gradient, slug, onVerified }: PasswordGat
       const data = await res.json();
 
       if (data.success) {
-        onVerified();
+        if (onVerified) {
+          onVerified();
+        } else {
+          window.location.reload();
+        }
       } else {
         setError(data.message || "Şifre yanlış");
         setShake(true);
@@ -73,7 +78,7 @@ export default function PasswordGate({ gradient, slug, onVerified }: PasswordGat
       </form>
 
       <div className="branding">
-        <a href="/">💝 Özel Bir Anı ile oluşturuldu</a>
+        <Link href="/">💝 Özel Bir Anı ile oluşturuldu</Link>
       </div>
     </div>
   );
