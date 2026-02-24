@@ -22,6 +22,29 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Email Notifications (Resend)
+
+The project uses [Resend](https://resend.com/) for transactional emails:
+
+- Welcome email on new user registration (via Clerk webhook)
+- Payment success/receipt email with the live site URL
+- Admin sales alert email for every successful sale
+
+Required environment variables:
+
+```bash
+RESEND_API_KEY=...
+RESEND_FROM_EMAIL=\"Ozel Bir Ani <onboarding@resend.dev>\"
+ADMIN_SALES_EMAILS=\"admin@yourdomain.com\" # optional fallback: ADMIN_EMAILS / ADMIN_EMAIL
+NEXT_PUBLIC_APP_URL=\"https://ozelbirani.com\"
+```
+
+Clerk webhook setup:
+
+- Endpoint: `POST /api/clerk-webhook`
+- Event: `user.created`
+- Signing secret env: `CLERK_WEBHOOK_SIGNING_SECRET`
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
