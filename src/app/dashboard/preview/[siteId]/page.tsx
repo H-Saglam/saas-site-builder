@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { getServiceSupabase } from "@/lib/supabase";
 import type { SiteRow, MusicRow } from "@/lib/types";
-import { siteRowToData, musicRowToTrack } from "@/lib/types";
+import { siteRowToData, musicRowToTrack } from "@/lib/mappers";
 import PreviewClient from "./PreviewClient";
 
 interface PageProps {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getServiceSupabase } from "@/lib/supabase";
+import { isWebP } from "@/lib/file-validation";
 
 // POST — Fotoğraf yükle
 export async function POST(request: NextRequest) {
@@ -46,12 +47,9 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
 
     // Magic bytes check: RIFF....WEBP
-    const isWebP =
-      buffer.length >= 12 &&
-      buffer.toString("utf8", 0, 4) === "RIFF" &&
-      buffer.toString("utf8", 8, 12) === "WEBP";
+    const validWebP = isWebP(buffer);
 
-    if (!isWebP) {
+    if (!validWebP) {
       return NextResponse.json(
         { error: "Geçersiz dosya içeriği. Sadece geçerli WebP yüklenebilir" },
         { status: 400 }
@@ -78,7 +76,8 @@ export async function POST(request: NextRequest) {
       url: urlData.publicUrl,
       path: data.path,
     });
-  } catch {
+  } catch (error) {
+    console.error("Upload error:", error);
     return NextResponse.json({ error: "Yükleme hatası" }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import imageCompression from "browser-image-compression";
 import {
   ArrowLeft,
@@ -29,7 +30,9 @@ import type {
   MusicTrack,
   SlideType,
 } from "@/lib/types";
-import { GRADIENT_PRESETS, MUSIC_CATEGORIES, siteRowToData } from "@/lib/types";
+import { GRADIENT_PRESETS, MUSIC_CATEGORIES } from "@/lib/constants";
+import { getEditDeadline, getTimeRemaining } from "@/lib/date-utils";
+import { siteRowToData } from "@/lib/mappers";
 import TemplateView from "@/components/template/TemplateView";
 
 // ----- helpers -----
@@ -73,6 +76,32 @@ const SLIDE_TYPE_LABELS: Record<SlideType, string> = {
   finale: "Final",
 };
 
+const SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const HEADING_REQUIRED_TYPES = new Set<SlideType>(["text", "finale"]);
+
+function getValidationMessage(details: unknown): string | null {
+  if (!details || typeof details !== "object") return null;
+  const parsed = details as {
+    formErrors?: unknown;
+    fieldErrors?: Record<string, unknown>;
+  };
+
+  if (Array.isArray(parsed.formErrors)) {
+    const formError = parsed.formErrors.find((msg) => typeof msg === "string" && msg.trim().length > 0);
+    if (typeof formError === "string") return formError;
+  }
+
+  if (parsed.fieldErrors && typeof parsed.fieldErrors === "object") {
+    for (const [field, fieldErrors] of Object.entries(parsed.fieldErrors)) {
+      if (!Array.isArray(fieldErrors)) continue;
+      const fieldError = fieldErrors.find((msg) => typeof msg === "string" && msg.trim().length > 0);
+      if (typeof fieldError === "string") return `${field}: ${fieldError}`;
+    }
+  }
+
+  return null;
+}
+
 export default function EditSitePage() {
   const router = useRouter();
   const params = useParams();
@@ -85,8 +114,9 @@ export default function EditSitePage() {
   const [saving, setSaving] = useState(false);
   const [site, setSite] = useState<SiteData | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [hasEditLimit, setHasEditLimit] = useState(false);
   const [editExpired, setEditExpired] = useState(false);
-  const [daysRemaining, setDaysRemaining] = useState<number>(0);
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
 
   // --- form state ---
   const [slug, setSlug] = useState("");
@@ -153,14 +183,18 @@ export default function EditSitePage() {
         );
         setSelectedMusicId(s.musicId ?? null);
 
-        // Düzenleme süresi kontrolü (1 hafta)
-        if (raw.created_at) {
-          const createdAt = new Date(raw.created_at);
-          const now = new Date();
-          const daysSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-          const remaining = Math.max(0, 7 - daysSinceCreation);
-          setDaysRemaining(Math.ceil(remaining));
-          setEditExpired(daysSinceCreation > 7);
+        // Sadece canlı (active) sitelerde yayınlandıktan sonra 7 gün düzenleme limiti uygulanır.
+        setHasEditLimit(false);
+        setEditExpired(false);
+        setDaysRemaining(null);
+        if (s.status === "active") {
+          const editAnchor = s.publishedAt ?? s.createdAt;
+          const editState = getTimeRemaining(getEditDeadline(editAnchor));
+          if (editState.hasExpiration) {
+            setHasEditLimit(true);
+            setDaysRemaining(editState.days);
+            setEditExpired(editState.expired);
+          }
         }
       } catch {
         alert("Site yüklenirken hata oluştu.");
@@ -243,10 +277,51 @@ export default function EditSitePage() {
 
   // --- save ---
   async function handleSave() {
+    const normalizedSlug = slug.trim().toLowerCase();
+    const normalizedTitle = title.trim();
+    const normalizedRecipientName = recipientName.trim();
+
+    if (isNewSite) {
+      if (normalizedTitle.length < 2) {
+        alert("Site başlığı en az 2 karakter olmalı");
+        return;
+      }
+      if (normalizedRecipientName.length < 1) {
+        alert("Alıcı adı boş olamaz");
+        return;
+      }
+      if (normalizedSlug.length < 3) {
+        alert("URL en az 3 karakter olmalı");
+        return;
+      }
+      if (!SLUG_REGEX.test(normalizedSlug)) {
+        alert("URL sadece küçük harf, rakam ve tire (-) içerebilir");
+        return;
+      }
+      if (slugAvailable === false) {
+        alert("Bu URL zaten kullanılıyor");
+        return;
+      }
+    }
+
+    if (isPrivate && (!password || password.length < 4)) {
+      alert("Şifre en az 4 karakter olmalı");
+      return;
+    }
+
     if (isPrivate && password && password !== confirmPassword) {
       alert("Şifreler eşleşmiyor");
       return;
     }
+
+    const missingRequiredHeading = slides.find(
+      (slide) => HEADING_REQUIRED_TYPES.has(slide.type) && slide.heading.trim().length === 0
+    );
+    if (missingRequiredHeading) {
+      alert(`${SLIDE_TYPE_LABELS[missingRequiredHeading.type]} slide'ı için başlık zorunlu`);
+      return;
+    }
+
     setSaving(true);
     try {
       // process slides for saving
@@ -279,9 +354,9 @@ export default function EditSitePage() {
       if (isNewSite) {
         // --- CREATE ---
         const body = {
-          title,
-          recipientName,
-          slug,
+          title: normalizedTitle,
+          recipientName: normalizedRecipientName,
+          slug: normalizedSlug,
           slides: processedSlides,
           musicId: selectedMusicId,
           isPrivate,
@@ -296,7 +371,10 @@ export default function EditSitePage() {
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Bir hata oluştu");
+        if (!res.ok) {
+          const validationMessage = getValidationMessage(data.details);
+          throw new Error(validationMessage ?? data.error ?? "Bir hata oluştu");
+        }
         router.push(`/dashboard?created=${data.site.slug}`);
       } else {
         // --- EDIT ---
@@ -349,6 +427,15 @@ export default function EditSitePage() {
   const filteredMusicTracks = selectedCategory === "all"
     ? musicTracks
     : musicTracks.filter((t) => t.category === selectedCategory);
+  const normalizedCreateSlug = slug.trim().toLowerCase();
+  const isCreateReady =
+    title.trim().length >= 2 &&
+    recipientName.trim().length >= 1 &&
+    normalizedCreateSlug.length >= 3 &&
+    SLUG_REGEX.test(normalizedCreateSlug) &&
+    slugAvailable !== false &&
+    slides.every((slide) => !HEADING_REQUIRED_TYPES.has(slide.type) || slide.heading.trim().length > 0) &&
+    (!isPrivate || (password.length >= 4 && password === confirmPassword));
 
   if (loading) {
     return (
@@ -406,7 +493,7 @@ export default function EditSitePage() {
             </button>
             <button
               onClick={handleSave}
-              disabled={saving || (!isNewSite && editExpired) || (isNewSite && (!title || !recipientName || !slug))}
+              disabled={saving || (!isNewSite && editExpired) || (isNewSite && !isCreateReady)}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-lg hover:bg-accent disabled:opacity-50 transition-colors font-medium"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -440,18 +527,18 @@ export default function EditSitePage() {
               <div>
                 <p className="font-semibold">Düzenleme süresi doldu</p>
                 <p className="text-sm mt-1">
-                  Site oluşturulduktan sonra sadece 1 hafta içinde düzenlenebilir. Artık bu siteyi güncelleyemezsiniz.
+                  Canlı sitenin yayın süresi dolduğu için artık bu siteyi güncelleyemezsiniz.
                 </p>
               </div>
             </div>
           )}
-          {!isNewSite && !editExpired && daysRemaining <= 3 && daysRemaining > 0 && (
+          {!isNewSite && hasEditLimit && !editExpired && daysRemaining !== null && daysRemaining <= 3 && daysRemaining > 0 && (
             <div className="bg-amber-50 border border-amber-200 text-amber-700 px-5 py-4 rounded-xl flex items-start gap-3">
               <Info className="h-5 w-5 mt-0.5 shrink-0" />
               <div>
                 <p className="font-semibold">Düzenleme süreniz yakında doluyor</p>
                 <p className="text-sm mt-1">
-                  Bu siteyi düzenleyebilmeniz için {daysRemaining} gün kaldı. Değişiklikleri en kısa sürede kaydetmeyi unutmayın.
+                  Bu canlı siteyi düzenleyebilmeniz için {daysRemaining} gün kaldı. Değişiklikleri en kısa sürede kaydetmeyi unutmayın.
                 </p>
               </div>
             </div>
@@ -749,7 +836,14 @@ export default function EditSitePage() {
                     <div className="mt-3">
                       <label className="block text-xs font-medium text-muted-foreground mb-1">Fotoğraf</label>
                       {slide.imageUrl && !slide.imageFile && (
-                        <img src={slide.imageUrl} alt="" className="w-20 h-20 object-cover rounded-lg mb-2" />
+                        <Image
+                          src={slide.imageUrl}
+                          alt=""
+                          width={80}
+                          height={80}
+                          className="w-20 h-20 object-cover rounded-lg mb-2"
+                          unoptimized
+                        />
                       )}
                       <input
                         type="file"
@@ -775,7 +869,14 @@ export default function EditSitePage() {
                         <div key={ci}>
                           <label className="block text-xs font-medium text-muted-foreground mb-1">Foto {ci + 1}</label>
                           {slide.collageUrls?.[ci] && !slide.collageFiles?.[ci] && (
-                            <img src={slide.collageUrls[ci]} alt="" className="w-16 h-16 object-cover rounded mb-1" />
+                            <Image
+                              src={slide.collageUrls[ci]}
+                              alt=""
+                              width={64}
+                              height={64}
+                              className="w-16 h-16 object-cover rounded mb-1"
+                              unoptimized
+                            />
                           )}
                           <input
                             type="file"
@@ -804,7 +905,14 @@ export default function EditSitePage() {
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground mb-1">Fotoğraf</label>
                         {slide.imageUrl && !slide.imageFile && (
-                          <img src={slide.imageUrl} alt="" className="w-20 h-20 object-cover rounded-lg mb-2" />
+                          <Image
+                            src={slide.imageUrl}
+                            alt=""
+                            width={80}
+                            height={80}
+                            className="w-20 h-20 object-cover rounded-lg mb-2"
+                            unoptimized
+                          />
                         )}
                         <input
                           type="file"
