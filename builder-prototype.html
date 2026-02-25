@@ -137,6 +137,40 @@
   }
   .preview-fullscreen-btn:hover { color: var(--accent); }
 
+  /* ===== Instagram-style Story Progress Bars ===== */
+  .story-bars {
+    position: absolute; top: 28px; left: 12px; right: 12px;
+    z-index: 5; display: flex; gap: 4px;
+  }
+  .story-bar {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,.25);
+    cursor: pointer; overflow: hidden;
+    border: none; padding: 0;
+    transition: background .2s;
+    appearance: none;
+  }
+  .story-bar:hover { background: rgba(255,255,255,.4); }
+  .story-bar .bar-fill {
+    height: 100%; width: 0%; border-radius: 2px;
+    background: rgba(255,255,255,.9);
+  }
+  .story-bar.visited .bar-fill { width: 100%; }
+  @keyframes storyFill {
+    from { width: 0%; }
+    to { width: 100%; }
+  }
+  /* Tap zones for left/right navigation */
+  .story-tap-zones {
+    position: absolute; top: 40px; bottom: 0; left: 0; right: 0;
+    z-index: 4; display: flex;
+  }
+  .story-tap-zone {
+    flex: 1; cursor: pointer; background: none; border: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   /* RIGHT: Controls / Builder */
   .builder-panel {
     width: 60%; padding: 1.5rem;
@@ -410,6 +444,11 @@
     <!-- Phone mockup -->
     <div class="phone-frame">
       <div class="phone-notch"></div>
+      <div class="story-bars" id="storyBars" aria-label="Story ilerleme çubukları"></div>
+      <div class="story-tap-zones">
+        <button class="story-tap-zone" type="button" id="storyPrevTap" aria-label="Önceki slide"></button>
+        <button class="story-tap-zone" type="button" id="storyNextTap" aria-label="Sonraki slide"></button>
+      </div>
       <div class="phone-content" id="phonePreview">
         <div class="emoji">💝</div>
         <div class="slide-title">Seninle başlayan hikayemiz...</div>
@@ -650,9 +689,9 @@
 
 <!-- ===== Vanilla JS ===== -->
 <script>
-// AI Music Mock UI — JS for upload filename display and slide thumb switching
+// AI Music Mock UI — JS for upload filename display and slide thumb/story switching
 
-// --- Slide thumbnail preview switching ---
+// --- Slide thumbnail + story preview switching ---
 var slideData = [
   { bg: 'linear-gradient(135deg, #881337, #1e1b4b)', emoji: '💝', title: 'Seninle başlayan hikayemiz...', desc: 'Sevgililer Günü Sürprizi' },
   { bg: 'linear-gradient(135deg, #1e3a5f, #0f172a)', emoji: '📷', title: 'Fotoğraf Slide\'ı', desc: 'En güzel anılarımız...' },
@@ -660,11 +699,14 @@ var slideData = [
   { bg: 'linear-gradient(135deg, #9f1239, #4c1d95)', emoji: '❤️', title: 'Seni çok seviyorum!', desc: 'Mutlu yıllar!' }
 ];
 
-function selectThumb(el, index) {
-  // Update active thumb
-  document.querySelectorAll('.slide-thumb').forEach(function(t) { t.classList.remove('active'); });
-  el.classList.add('active');
-  // Update phone preview
+var storyBars = document.getElementById('storyBars');
+var storyPrevTap = document.getElementById('storyPrevTap');
+var storyNextTap = document.getElementById('storyNextTap');
+var currentSlideIndex = 0;
+var storyDurationMs = 4000;
+var storyTimer = null;
+
+function updatePhonePreview(index) {
   var slide = slideData[index];
   var phone = document.getElementById('phonePreview');
   phone.style.background = slide.bg;
@@ -672,6 +714,81 @@ function selectThumb(el, index) {
   phone.querySelector('.slide-title').textContent = slide.title;
   phone.querySelector('.slide-desc').textContent = slide.desc;
 }
+
+function updateActiveThumb(index) {
+  document.querySelectorAll('.slide-thumb').forEach(function(t, i) {
+    t.classList.toggle('active', i === index);
+  });
+}
+
+function updateStoryBars(index) {
+  document.querySelectorAll('.story-bar').forEach(function(bar, i) {
+    var fill = bar.querySelector('.bar-fill');
+    bar.classList.remove('visited', 'active');
+    fill.style.animation = 'none';
+    fill.style.width = '0%';
+    if (i < index) {
+      bar.classList.add('visited');
+      fill.style.width = '100%';
+    }
+  });
+
+  var activeBar = document.querySelectorAll('.story-bar')[index];
+  if (!activeBar) return;
+
+  var activeFill = activeBar.querySelector('.bar-fill');
+  activeBar.classList.add('active');
+  activeFill.style.animation = 'none';
+  activeFill.offsetHeight; // force reflow to restart animation
+  activeFill.style.animation = 'storyFill ' + storyDurationMs + 'ms linear forwards';
+}
+
+function resetStoryTimer() {
+  clearTimeout(storyTimer);
+  storyTimer = setTimeout(function() {
+    showSlide(currentSlideIndex + 1);
+  }, storyDurationMs);
+}
+
+function showSlide(index) {
+  if (index >= slideData.length) index = 0;
+  if (index < 0) index = slideData.length - 1;
+  currentSlideIndex = index;
+  updateActiveThumb(index);
+  updatePhonePreview(index);
+  updateStoryBars(index);
+  resetStoryTimer();
+}
+
+function selectThumb(el, index) {
+  showSlide(index);
+}
+
+function initStoryBars() {
+  slideData.forEach(function(_, index) {
+    var bar = document.createElement('button');
+    bar.type = 'button';
+    bar.className = 'story-bar';
+    bar.setAttribute('aria-label', (index + 1) + '. slide');
+    bar.innerHTML = '<span class="bar-fill"></span>';
+    bar.addEventListener('click', function(event) {
+      event.stopPropagation();
+      showSlide(index);
+    });
+    storyBars.appendChild(bar);
+  });
+}
+
+storyPrevTap.addEventListener('click', function() {
+  showSlide(currentSlideIndex - 1);
+});
+
+storyNextTap.addEventListener('click', function() {
+  showSlide(currentSlideIndex + 1);
+});
+
+initStoryBars();
+showSlide(0);
 
 // --- Audio file upload mock ---
 var audioInput = document.getElementById('audioFileInput');
