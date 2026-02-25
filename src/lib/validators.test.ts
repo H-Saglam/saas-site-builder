@@ -307,7 +307,7 @@ describe("slideSchema", () => {
 });
 
 describe("siteFormSchema", () => {
-  const validSlide: any = {
+  const validSlide = {
     type: "photo",
     heading: "Test Heading",
     description: "Test Description",
