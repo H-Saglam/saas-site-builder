@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef, type KeyboardEvent } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import imageCompression from "browser-image-compression";
 import {
@@ -73,6 +73,117 @@ const SLIDE_TYPE_LABELS: Record<SlideType, string> = {
   finale: "Final",
 };
 
+type MusicChatRole = "user" | "assistant";
+type MusicChatMessage = {
+  id: string;
+  role: MusicChatRole;
+  text: string;
+};
+
+const MUSIC_CHAT_STORAGE_KEY_PREFIX = "template-adjuster-music-chat-v1";
+const MUSIC_CHAT_QUICK_PROMPTS = ["Lo-fi", "Trap", "House", "Cinematic", "Latin"] as const;
+
+const DEFAULT_MUSIC_CHAT_MESSAGES: MusicChatMessage[] = [
+  {
+    id: "music-chat-default-1",
+    role: "assistant",
+    text: "Share the vibe you want and I will format it as a production-ready music prompt.",
+  },
+];
+
+function createMusicChatMessage(role: MusicChatRole, text: string): MusicChatMessage {
+  return {
+    id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+    role,
+    text,
+  };
+}
+
+function isMusicChatMessage(value: unknown): value is MusicChatMessage {
+  if (!value || typeof value !== "object") return false;
+  const maybe = value as { id?: unknown; role?: unknown; text?: unknown };
+  return (
+    typeof maybe.id === "string"
+    && (maybe.role === "user" || maybe.role === "assistant")
+    && typeof maybe.text === "string"
+  );
+}
+
+function buildMusicAssistantResponse(input: string): string {
+  const text = input.toLowerCase();
+  const styleTags = new Set<string>();
+
+  let bpm = 102;
+  let key = "A minor";
+  let mood = "warm";
+
+  if (text.includes("lo-fi") || text.includes("lofi")) {
+    styleTags.add("lo-fi");
+    styleTags.add("dusty drums");
+    styleTags.add("vinyl texture");
+    bpm = 84;
+    key = "D minor";
+    mood = "chill";
+  }
+  if (text.includes("trap")) {
+    styleTags.add("trap");
+    styleTags.add("808 bass");
+    styleTags.add("tight hats");
+    bpm = 142;
+    key = "F minor";
+    mood = "dark";
+  }
+  if (text.includes("house")) {
+    styleTags.add("house");
+    styleTags.add("four-on-the-floor");
+    styleTags.add("club synth");
+    bpm = 124;
+    key = "C minor";
+    mood = "energetic";
+  }
+  if (text.includes("cinematic")) {
+    styleTags.add("cinematic");
+    styleTags.add("orchestral layers");
+    styleTags.add("epic risers");
+    bpm = 96;
+    key = "E minor";
+    mood = "dramatic";
+  }
+  if (text.includes("latin")) {
+    styleTags.add("latin");
+    styleTags.add("percussion groove");
+    styleTags.add("brass accents");
+    bpm = 108;
+    key = "G minor";
+    mood = "festive";
+  }
+
+  if (text.includes("romantic") || text.includes("romantik") || text.includes("love")) {
+    styleTags.add("romantic");
+    mood = "romantic";
+  }
+  if (text.includes("piano") || text.includes("piyano")) {
+    styleTags.add("soft piano");
+  }
+  if (text.includes("guitar") || text.includes("gitar") || text.includes("acoustic")) {
+    styleTags.add("acoustic guitar");
+  }
+
+  if (styleTags.size === 0) {
+    styleTags.add("modern pop");
+    styleTags.add("warm pads");
+    styleTags.add("clean drums");
+  }
+
+  const prompt = `Create a ${mood} track inspired by "${input}". Keep it hooky, polished, and emotionally clear.`;
+
+  return [
+    `Got it. Suggested prompt: ${prompt}`,
+    `Style tags: ${Array.from(styleTags).join(", ")}`,
+    `BPM: ${bpm}  Key: ${key}  Mood: ${mood}`,
+  ].join("\n");
+}
+
 export default function EditSitePage() {
   const router = useRouter();
   const params = useParams();
@@ -102,6 +213,13 @@ export default function EditSitePage() {
   // --- create mode: slug availability ---
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [musicChatInput, setMusicChatInput] = useState("");
+  const [musicChatMessages, setMusicChatMessages] = useState<MusicChatMessage[]>(DEFAULT_MUSIC_CHAT_MESSAGES);
+  const [musicChatReady, setMusicChatReady] = useState(false);
+  const musicChatListRef = useRef<HTMLDivElement | null>(null);
+  const musicChatInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const musicChatHydratedKeyRef = useRef<string | null>(null);
+  const musicChatStorageKey = `${MUSIC_CHAT_STORAGE_KEY_PREFIX}:${siteId}`;
 
   const checkSlug = useCallback(async (s: string) => {
     if (s.length < 3) {
@@ -181,6 +299,41 @@ export default function EditSitePage() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    setMusicChatReady(false);
+    try {
+      const raw = localStorage.getItem(musicChatStorageKey);
+      if (!raw) {
+        setMusicChatMessages(DEFAULT_MUSIC_CHAT_MESSAGES);
+        return;
+      }
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.every(isMusicChatMessage)) {
+        setMusicChatMessages(parsed.length > 0 ? parsed : DEFAULT_MUSIC_CHAT_MESSAGES);
+      } else {
+        setMusicChatMessages(DEFAULT_MUSIC_CHAT_MESSAGES);
+      }
+    } catch {
+      setMusicChatMessages(DEFAULT_MUSIC_CHAT_MESSAGES);
+    } finally {
+      musicChatHydratedKeyRef.current = musicChatStorageKey;
+      setMusicChatReady(true);
+    }
+  }, [musicChatStorageKey]);
+
+  useEffect(() => {
+    if (!musicChatReady || musicChatHydratedKeyRef.current !== musicChatStorageKey) return;
+    try {
+      localStorage.setItem(musicChatStorageKey, JSON.stringify(musicChatMessages));
+    } catch {}
+  }, [musicChatMessages, musicChatReady, musicChatStorageKey]);
+
+  useEffect(() => {
+    const list = musicChatListRef.current;
+    if (!list) return;
+    list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
+  }, [musicChatMessages]);
+
   // --- slide helpers ---
   function addSlide(type: SlideType) {
     if (slides.length >= 12) return;
@@ -193,6 +346,33 @@ export default function EditSitePage() {
   function updateSlide(index: number, patch: Partial<SlideFormData>) {
     setSlides(slides.map((s, i) => (i === index ? { ...s, ...patch } : s)));
   }
+
+  const sendMusicChatMessage = useCallback((raw?: string) => {
+    const message = (raw ?? musicChatInput).trim();
+    if (!message) return;
+
+    const userMessage = createMusicChatMessage("user", message);
+    const assistantMessage = createMusicChatMessage("assistant", buildMusicAssistantResponse(message));
+    setMusicChatMessages((prev) => [...prev, userMessage, assistantMessage]);
+    setMusicChatInput("");
+  }, [musicChatInput]);
+
+  const handleMusicChatEnter = useCallback((event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMusicChatMessage();
+    }
+  }, [sendMusicChatMessage]);
+
+  const applyQuickPrompt = useCallback((chip: (typeof MUSIC_CHAT_QUICK_PROMPTS)[number]) => {
+    setMusicChatInput((prev) => {
+      if (prev.trim()) return `${prev.trimEnd()} ${chip}`;
+      return `Create a ${chip} track with a memorable hook and modern mix.`;
+    });
+    requestAnimationFrame(() => {
+      musicChatInputRef.current?.focus();
+    });
+  }, []);
 
   // --- upload ---
   async function compressImage(file: File): Promise<File> {
@@ -642,6 +822,72 @@ export default function EditSitePage() {
                   </button>
                 ))
               )}
+            </div>
+
+            <div className="mt-6 border-t border-border pt-5">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Music Chat</h3>
+                  <p className="text-xs text-muted-foreground">UI demo (no generation)</p>
+                </div>
+                <span className="px-2 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-primary-light text-primary">
+                  Music Prompt
+                </span>
+              </div>
+
+              <div
+                ref={musicChatListRef}
+                className="max-h-72 overflow-y-auto rounded-xl border border-border bg-background p-3 flex flex-col gap-2.5"
+              >
+                {musicChatMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line ${
+                      msg.role === "user"
+                        ? "self-end rounded-br-md bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(244,63,94,0.3),0_0_18px_rgba(244,63,94,0.2)]"
+                        : "self-start rounded-bl-md border border-border bg-muted text-foreground shadow-[0_0_0_1px_rgba(63,63,70,0.45),0_0_14px_rgba(244,63,94,0.12)]"
+                    }`}
+                  >
+                    <p className="mb-1 text-[11px] uppercase tracking-wide opacity-70 font-semibold">
+                      {msg.role === "user" ? "You" : "Assistant"}
+                    </p>
+                    {msg.text}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 mb-3 flex flex-wrap gap-2">
+                {MUSIC_CHAT_QUICK_PROMPTS.map((chip) => (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => applyQuickPrompt(chip)}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border hover:border-primary/60 hover:text-foreground hover:bg-primary-light/25 transition-all"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-end gap-2">
+                <textarea
+                  ref={musicChatInputRef}
+                  rows={2}
+                  value={musicChatInput}
+                  onChange={(e) => setMusicChatInput(e.target.value)}
+                  onKeyDown={handleMusicChatEnter}
+                  placeholder="Describe the track you want..."
+                  className="flex-1 resize-none bg-muted border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:border-primary focus:ring-2 focus:ring-ring/20 outline-none transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => sendMusicChatMessage()}
+                  disabled={!musicChatInput.trim()}
+                  className="h-[42px] px-4 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Send
+                </button>
+              </div>
             </div>
           </section>
 
