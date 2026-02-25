@@ -123,6 +123,7 @@ export const siteUpdateSchema = z
       .max(50, "İsim en fazla 50 karakter olabilir")
       .optional(),
     slug: slugSchema.optional(),
+    templateId: z.string().optional(),
     slides: z
       .array(slideSchema)
       .min(3, "En az 3 slide olmalı")

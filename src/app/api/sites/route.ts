@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import bcrypt from "bcryptjs";
 import { getServiceSupabase } from "@/lib/supabase";
 import { getEditDeadline, getTimeRemaining } from "@/lib/date-utils";
-import { siteFormSchema } from "@/lib/validators";
+import { siteFormSchema, siteUpdateSchema } from "@/lib/validators";
 
 // GET — Kullanıcının sitelerini getir (tek site veya tümü)
 export async function GET(request: NextRequest) {
@@ -137,19 +137,23 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { siteId: bodyId, id: altId } = body;
-    const siteId = bodyId || altId;
+    const parsed = siteUpdateSchema.safeParse(body);
 
-    // Strict allowlist — prevent mass assignment of status, package_type, user_id, etc.
-    const ALLOWED_FIELDS = ["title", "recipientName", "slug", "templateId", "slides", "musicId", "isPrivate", "password", "confirmPassword"];
-    const updateData: Record<string, unknown> = {};
-    for (const key of ALLOWED_FIELDS) {
-      if (body[key] !== undefined) updateData[key] = body[key];
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Geçersiz veri", details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+
+    const { siteId: bodyId, id: altId } = parsed.data;
+    const siteId = bodyId || altId;
 
     if (!siteId) {
       return NextResponse.json({ error: "Site ID gerekli" }, { status: 400 });
     }
+
+    const updateData: Record<string, any> = { ...parsed.data };
 
     const supabase = getServiceSupabase();
 
