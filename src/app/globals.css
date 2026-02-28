@@ -296,6 +296,10 @@ body {
   color: #0F172A !important;
 }
 
+[data-theme="light"] .home-page .home-hero-accent {
+  background-image: linear-gradient(to right, #3B82F6, #6366F1, #7C3AED) !important;
+}
+
 [data-theme="light"] .home-page .text-zinc-600,
 [data-theme="light"] .home-page .text-zinc-500,
 [data-theme="light"] .home-page .text-zinc-400 {
