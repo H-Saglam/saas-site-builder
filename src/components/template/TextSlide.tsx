@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { SlideGradient } from "@/lib/types";
 import SongBadge from "./SongBadge";
 
@@ -10,7 +11,7 @@ interface TextSlideProps {
   isActive: boolean;
 }
 
-export default function TextSlide({
+function TextSlide({
   heading,
   description,
   gradient,
@@ -39,3 +40,6 @@ export default function TextSlide({
     </section>
   );
 }
+
+// Wrapped in React.memo to prevent unnecessary re-renders when other slides are active.
+export default memo(TextSlide);

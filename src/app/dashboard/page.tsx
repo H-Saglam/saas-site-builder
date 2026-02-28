@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Plus,
@@ -16,6 +17,7 @@ import {
   Gift,
   FolderOpen,
 } from "lucide-react";
+import { getEditDeadline, getTimeRemaining } from "@/lib/date-utils";
 
 interface SiteItem {
   id: string;
@@ -26,44 +28,30 @@ interface SiteItem {
   status: string;
   package_type: string;
   is_private: boolean;
+  published_at: string | null;
+  updated_at: string;
+  expires_at: string | null;
   created_at: string;
-  slides: { gradient?: { from: string; to: string }; imageUrl?: string }[];
+  slides_count: number;
+  first_slide: { gradient?: { from: string; to: string }; imageUrl?: string } | null;
 }
 
 type FilterType = "all" | "active" | "draft" | "archived";
 
-function getTimeAgo(dateStr: string): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMin / 60);
-  const diffDays = Math.floor(diffHours / 24);
-  const diffWeeks = Math.floor(diffDays / 7);
 
-  if (diffMin < 1) return "Az önce";
-  if (diffMin < 60) return `${diffMin} dk önce`;
-  if (diffHours < 24) return `${diffHours} saat önce`;
-  if (diffDays < 7) return `${diffDays} gün önce`;
-  if (diffWeeks < 4) return `${diffWeeks} hafta önce`;
-  return date.toLocaleDateString("tr-TR");
-}
+const STATUS_CONFIG: Record<string, { classes: string; label: string }> = {
+  active: { classes: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200", label: "Yayında" },
+  draft: { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: "Taslak" },
+  paid: { classes: "bg-blue-50 text-blue-600 ring-1 ring-blue-200", label: "Ödendi" },
+  expired: { classes: "bg-red-50 text-red-600 ring-1 ring-red-200", label: "Süresi Doldu" },
+};
 
-function getTimeRemaining(createdAt: string, durationDays: number) {
-  const created = new Date(createdAt);
-  const now = new Date();
-  const expiresAt = new Date(created.getTime() + durationDays * 24 * 60 * 60 * 1000);
-  const diff = expiresAt.getTime() - now.getTime();
-
-  if (diff <= 0) return { expired: true, text: "Süresi doldu", days: 0 };
-
-  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-
-  if (days > 30) return { expired: false, text: `${days} gün`, days };
-  if (days > 0) return { expired: false, text: `${days}g ${hours}s`, days };
-  return { expired: false, text: `${hours} saat`, days };
-}
+const DASHBOARD_FILTERS: { key: FilterType; label: string }[] = [
+  { key: "all", label: "Tüm Projeler" },
+  { key: "active", label: "Aktif" },
+  { key: "draft", label: "Taslaklar" },
+  { key: "archived", label: "Arşiv" },
+];
 
 function DashboardPageContent() {
   const [sites, setSites] = useState<SiteItem[]>([]);
@@ -116,12 +104,6 @@ function DashboardPageContent() {
     return true;
   });
 
-  const filters: { key: FilterType; label: string }[] = [
-    { key: "all", label: "Tüm Projeler" },
-    { key: "active", label: "Aktif" },
-    { key: "draft", label: "Taslaklar" },
-    { key: "archived", label: "Arşiv" },
-  ];
 
   if (loading) {
     return (
@@ -183,7 +165,7 @@ function DashboardPageContent() {
 
       {/* Filter Tabs — Pill / Segment Control */}
       <div className="bg-muted p-1 rounded-xl inline-flex mb-6">
-        {filters.map((f) => (
+        {DASHBOARD_FILTERS.map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
@@ -215,18 +197,16 @@ function DashboardPageContent() {
 
         {/* Site Cards */}
         {filteredSites.map((site) => {
-          const gradient = site.slides?.[0]?.gradient;
-          const coverImage = site.slides?.[0]?.imageUrl;
-          const editRemaining = getTimeRemaining(site.created_at, 7);
-          const liveRemaining = site.status === "active" ? getTimeRemaining(site.created_at, 365) : null;
+          const gradient = site.first_slide?.gradient;
+          const coverImage = site.first_slide?.imageUrl;
+          const editAnchor = site.published_at ?? site.created_at;
+          const editRemaining =
+            site.status === "active" ? getTimeRemaining(getEditDeadline(editAnchor)) : null;
+          const liveRemaining = site.status === "active" ? getTimeRemaining(site.expires_at) : null;
+          const canEdit = site.status !== "active" || (editRemaining ? !editRemaining.expired : true);
+          const canDownloadZip = site.status === "active" && site.package_type === "premium";
 
-          const statusConfig: Record<string, { classes: string; label: string }> = {
-            active: { classes: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200", label: "Yayında" },
-            draft: { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: "Taslak" },
-            paid: { classes: "bg-blue-50 text-blue-600 ring-1 ring-blue-200", label: "Ödendi" },
-            expired: { classes: "bg-red-50 text-red-600 ring-1 ring-red-200", label: "Süresi Doldu" },
-          };
-          const st = statusConfig[site.status] || { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: site.status };
+          const st = STATUS_CONFIG[site.status] || { classes: "bg-stone-100 text-stone-500 ring-1 ring-stone-200", label: site.status };
 
           return (
             <div
@@ -245,10 +225,13 @@ function DashboardPageContent() {
                 }}
               >
                 {coverImage ? (
-                  <img
+                  <Image
                     src={coverImage}
                     alt={site.title}
-                    className="w-full h-full object-cover group-hover/cover:scale-105 transition-transform duration-500"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                    className="object-cover group-hover/cover:scale-105 transition-transform duration-500"
+                    unoptimized
                   />
                 ) : (
                   <div
@@ -284,7 +267,7 @@ function DashboardPageContent() {
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${st.classes}`}>
                     {st.label}
                   </span>
-                  <span className="text-muted-foreground text-[11px]">{site.slides?.length || 0} slide</span>
+                  <span className="text-muted-foreground text-[11px]">{site.slides_count || 0} slide</span>
                   {site.status === "active" && (
                     <>
                       <span className="text-border text-[11px]">·</span>
@@ -295,20 +278,26 @@ function DashboardPageContent() {
 
                 {/* Countdown badges */}
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
-                  {!editRemaining.expired ? (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${editRemaining.days <= 2 ? "bg-amber-50 text-amber-600" : "bg-muted text-muted-foreground"
-                      }`}>
-                      <Clock className="w-3 h-3" /> {editRemaining.text} kaldı
-                    </span>
+                  {site.status === "active" ? (
+                    !editRemaining?.expired ? (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${editRemaining && editRemaining.days <= 2 ? "bg-amber-50 text-amber-600" : "bg-muted text-muted-foreground"
+                        }`}>
+                        <Clock className="w-3 h-3" /> Düzenleme: {editRemaining?.hasExpiration ? `${editRemaining.text} kaldı` : "7 gün"}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-red-50 text-red-600 inline-flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> Düzenleme süresi doldu
+                      </span>
+                    )
                   ) : (
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground inline-flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> Süre doldu
+                      <Clock className="w-3 h-3" /> Süresiz düzenleme
                     </span>
                   )}
-                  {liveRemaining && !liveRemaining.expired && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${liveRemaining.days <= 30 ? "bg-red-50 text-red-600" : "bg-muted text-muted-foreground"
+                  {liveRemaining && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${liveRemaining.expired ? "bg-red-50 text-red-600" : liveRemaining.hasExpiration && liveRemaining.days <= 30 ? "bg-red-50 text-red-600" : "bg-muted text-muted-foreground"
                       }`}>
-                      <Globe className="w-3 h-3" /> {liveRemaining.text} kaldı
+                      <Globe className="w-3 h-3" /> {liveRemaining.hasExpiration ? (liveRemaining.expired ? "Yayın süresi doldu" : `${liveRemaining.text} kaldı`) : "Süresiz yayın"}
                     </span>
                   )}
                 </div>
@@ -325,8 +314,8 @@ function DashboardPageContent() {
                     </button>
                   )}
 
-                  {/* ZIP İndir (only for active) */}
-                  {site.status === "active" && (
+                  {/* ZIP İndir (only for active premium) */}
+                  {canDownloadZip && (
                     <a
                       href={`/api/download/${site.id}`}
                       className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-accent transition-colors inline-flex items-center justify-center gap-1.5"
@@ -335,8 +324,8 @@ function DashboardPageContent() {
                     </a>
                   )}
 
-                  {/* Düzenle (only if edit not expired) */}
-                  {!editRemaining.expired && (
+                  {/* Düzenle */}
+                  {canEdit && (
                     <Link
                       href={`/dashboard/editor/${site.id}`}
                       className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:bg-border hover:text-foreground transition-colors inline-flex items-center justify-center gap-1.5"

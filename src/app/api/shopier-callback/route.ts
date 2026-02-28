@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
 import type { PackageType } from "@/lib/types";
+import { getUserPrimaryEmailById } from "@/lib/clerk-users";
+import { getAppBaseUrl, sendAdminSaleAlertEmail, sendPaymentSuccessEmail } from "@/lib/email";
 import crypto from "crypto";
 
 const PACKAGE_PRICES_TRY: Record<PackageType, number> = {
@@ -118,6 +120,7 @@ export async function POST(request: NextRequest) {
       standardExpiry.setFullYear(standardExpiry.getFullYear() + 1);
       expiresAt = standardExpiry.toISOString();
     }
+    const activatedAt = new Date().toISOString();
 
     const { data: updatedSite, error } = await supabase
       .from("sites")
@@ -125,10 +128,11 @@ export async function POST(request: NextRequest) {
         status: "active",
         package_type: packageType,
         expires_at: expiresAt,
-        updated_at: new Date().toISOString(),
+        published_at: activatedAt,
+        updated_at: activatedAt,
       })
       .eq("id", siteId)
-      .select("id")
+      .select("id, user_id, slug, recipient_name")
       .maybeSingle();
 
     if (error) {
@@ -139,6 +143,48 @@ export async function POST(request: NextRequest) {
     if (!updatedSite) {
       console.error("Aktifleştirilecek site bulunamadı:", siteId);
       return NextResponse.json({ error: "Site not found" }, { status: 404 });
+    }
+
+    const liveSiteUrl = `${getAppBaseUrl()}/${updatedSite.slug}`;
+    const amountTRY = paidAmountInKurus / 100;
+
+    let customerEmail = "bilinmiyor";
+    let customerFirstName: string | null = null;
+
+    try {
+      const { email, firstName } = await getUserPrimaryEmailById(updatedSite.user_id);
+      if (email) customerEmail = email;
+      customerFirstName = firstName;
+    } catch (emailLookupError) {
+      console.error("Kullanici email bilgisi okunamadi:", emailLookupError);
+    }
+
+    if (customerEmail !== "bilinmiyor") {
+      try {
+        await sendPaymentSuccessEmail({
+          to: customerEmail,
+          firstName: customerFirstName,
+          recipientName: updatedSite.recipient_name || "Sevdigin",
+          packageType,
+          amountTRY,
+          liveSiteUrl,
+        });
+      } catch (paymentEmailError) {
+        console.error("Odeme basari emaili gonderilemedi:", paymentEmailError);
+      }
+    }
+
+    try {
+      await sendAdminSaleAlertEmail({
+        customerEmail,
+        amountTRY,
+        packageType,
+        liveSiteUrl,
+        siteId: updatedSite.id,
+        orderId,
+      });
+    } catch (adminAlertError) {
+      console.error("Admin satis bildirimi gonderilemedi:", adminAlertError);
     }
 
     console.log(`Site ${siteId} aktifleştirildi. Paket: ${packageType}`);

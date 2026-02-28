@@ -108,7 +108,7 @@ export default function TemplatePickerModal({ open, onClose }: TemplatePickerMod
                 </div>
 
                 {/* Body */}
-                <div className="p-6 overflow-y-auto" style={{ maxHeight: "calc(85vh - 150px)" }}>
+                <div className="p-6 overflow-y-auto max-h-[calc(85vh_-_150px)]">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                         {filteredTemplates.map((tpl) => (
                             <button
