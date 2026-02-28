@@ -15,7 +15,13 @@ import {
   Trash2,
   Gift,
   FolderOpen,
+  Music,
+  Sparkles,
+  Upload,
+  MessageCircle,
+  Send,
 } from "lucide-react";
+import { MUSIC_CATEGORIES, type MusicTrack } from "@/lib/types";
 
 interface SiteItem {
   id: string;
@@ -31,6 +37,28 @@ interface SiteItem {
 }
 
 type FilterType = "all" | "active" | "draft" | "archived";
+
+type MockMusicMessage = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+};
+
+const AI_MUSIC_INSPIRATION_CHIPS = [
+  "Lush Pads",
+  "Catchy Hook",
+  "Latin Brass",
+  "Uplifting",
+  "Lo-fi Beats",
+  "Dreamy Reverb",
+] as const;
+
+const AI_MUSIC_CHAT_MOCK_MESSAGES: MockMusicMessage[] = [
+  { id: "music-chat-1", role: "user", text: "Create a warm pop song for a birthday surprise." },
+  { id: "music-chat-2", role: "assistant", text: "Great direction. I can blend acoustic guitar and soft piano with a bright chorus." },
+  { id: "music-chat-3", role: "user", text: "Keep it uplifting and around two minutes." },
+  { id: "music-chat-4", role: "assistant", text: "Perfect. I will keep the tempo upbeat and the arrangement compact for a short-form edit." },
+];
 
 function getTimeAgo(dateStr: string): string {
   const now = new Date();
@@ -70,6 +98,14 @@ function DashboardPageContent() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
+  const [musicTracks, setMusicTracks] = useState<MusicTrack[]>([]);
+  const [musicLibraryCategory, setMusicLibraryCategory] = useState<string>("all");
+  const [songDescription, setSongDescription] = useState("");
+  const [includeAudio, setIncludeAudio] = useState(false);
+  const [includeLyrics, setIncludeLyrics] = useState(false);
+  const [instrumentalOnly, setInstrumentalOnly] = useState(false);
+  const [selectedInspirationChips, setSelectedInspirationChips] = useState<string[]>([]);
+  const [selectedMusicFileName, setSelectedMusicFileName] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
   const paymentSuccess = searchParams.get("payment") === "success";
@@ -82,6 +118,13 @@ function DashboardPageContent() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/music")
+      .then((res) => res.json())
+      .then((data) => setMusicTracks(data.tracks || []))
+      .catch(() => setMusicTracks([]));
   }, []);
 
   useEffect(() => {
@@ -116,12 +159,24 @@ function DashboardPageContent() {
     return true;
   });
 
+  const filteredMusicTracks = musicLibraryCategory === "all"
+    ? musicTracks
+    : musicTracks.filter((track) => track.category === musicLibraryCategory);
+
   const filters: { key: FilterType; label: string }[] = [
     { key: "all", label: "Tüm Projeler" },
     { key: "active", label: "Aktif" },
     { key: "draft", label: "Taslaklar" },
     { key: "archived", label: "Arşiv" },
   ];
+
+  const toggleInspirationChip = (chip: string) => {
+    setSelectedInspirationChips((prev) => (
+      prev.includes(chip)
+        ? prev.filter((item) => item !== chip)
+        : [...prev, chip]
+    ));
+  };
 
   if (loading) {
     return (
@@ -196,6 +251,225 @@ function DashboardPageContent() {
           </button>
         ))}
       </div>
+
+      {/* Music Library */}
+      <section className="bg-card border border-border rounded-xl p-6 shadow-sm mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Music className="w-5 h-5 text-primary" />
+              Music Library
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Track listing and AI mock tools for music ideation.
+            </p>
+          </div>
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-light text-primary">
+            {musicTracks.length} tracks
+          </span>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mt-4">
+          <button
+            type="button"
+            onClick={() => setMusicLibraryCategory("all")}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${musicLibraryCategory === "all"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-border"
+              }`}
+          >
+            Tümü
+          </button>
+          {MUSIC_CATEGORIES.map((cat) => (
+            <button
+              key={cat.value}
+              type="button"
+              onClick={() => setMusicLibraryCategory(cat.value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${musicLibraryCategory === cat.value
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-border"
+                }`}
+            >
+              {cat.emoji} {cat.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+          {filteredMusicTracks.length === 0 && (
+            <p className="md:col-span-2 text-sm text-muted-foreground border border-border rounded-lg bg-muted px-3 py-3">
+              Bu kategoride müzik bulunamadı.
+            </p>
+          )}
+          {filteredMusicTracks.map((track) => (
+            <div
+              key={track.id}
+              className="p-3 rounded-lg border border-border bg-muted text-sm text-foreground/90"
+            >
+              <p className="font-medium text-foreground truncate">{track.title}</p>
+              <p className="text-xs text-muted-foreground mt-1 truncate">{track.artist}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* // AI Music Section (moved to Music Library) */}
+        <div className="mt-6 border-t border-border pt-6">
+          <h3 className="text-base font-semibold text-foreground">AI Music Generator</h3>
+
+          <div className="mt-4 space-y-4">
+            <article className="bg-muted/45 border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <h4 className="text-sm font-semibold text-foreground">Generator Card</h4>
+              </div>
+
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Song Description</label>
+              <textarea
+                value={songDescription}
+                onChange={(e) => setSongDescription(e.target.value)}
+                placeholder="Describe the style, mood, and instrumentation..."
+                className="w-full min-h-[96px] resize-y bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/20 outline-none transition-all"
+              />
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIncludeAudio((prev) => !prev)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${includeAudio
+                    ? "bg-primary-light text-primary border-primary/60"
+                    : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                    }`}
+                >
+                  +Audio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIncludeLyrics((prev) => !prev)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${includeLyrics
+                    ? "bg-primary-light text-primary border-primary/60"
+                    : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                    }`}
+                >
+                  +Lyrics
+                </button>
+              </div>
+
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInstrumentalOnly((prev) => !prev)}
+                  className={`relative w-11 h-6 rounded-full border transition-colors ${instrumentalOnly
+                    ? "bg-primary border-primary"
+                    : "bg-card border-border"
+                    }`}
+                  aria-pressed={instrumentalOnly}
+                >
+                  <span
+                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-primary-foreground transition-all ${instrumentalOnly ? "right-0.5" : "left-0.5"
+                      }`}
+                  />
+                </button>
+                <span className="text-xs text-muted-foreground">Instrumental</span>
+              </div>
+
+              <div className="mt-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Inspiration</p>
+                <div className="flex flex-wrap gap-2">
+                  {AI_MUSIC_INSPIRATION_CHIPS.map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => toggleInspirationChip(chip)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selectedInspirationChips.includes(chip)
+                        ? "bg-primary-light text-primary border-primary/60"
+                        : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                        }`}
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="mt-4 w-full sm:w-auto px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-accent transition-colors"
+              >
+                Generate
+              </button>
+            </article>
+
+            <article className="bg-muted/45 border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Upload className="w-4 h-4 text-primary" />
+                <h4 className="text-sm font-semibold text-foreground">Upload Music Card</h4>
+              </div>
+
+              <label
+                htmlFor="dashboardMusicUpload"
+                className="flex flex-col items-center justify-center gap-2 border border-dashed border-border rounded-xl bg-card px-4 py-6 text-center cursor-pointer hover:border-primary/60 transition-colors"
+              >
+                <span className="text-sm font-medium text-foreground">Select audio file</span>
+                <span className="text-xs text-muted-foreground">MP3, WAV, AIFF</span>
+              </label>
+              <input
+                id="dashboardMusicUpload"
+                type="file"
+                accept=".mp3,.wav,.aiff"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  setSelectedMusicFileName(file?.name ?? "");
+                }}
+                className="sr-only"
+              />
+
+              <div className="mt-3 text-xs rounded-lg border border-border bg-card px-3 py-2 text-muted-foreground break-all">
+                {selectedMusicFileName || "No file selected"}
+              </div>
+            </article>
+
+            <article className="bg-muted/45 border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageCircle className="w-4 h-4 text-primary" />
+                <h4 className="text-sm font-semibold text-foreground">Chat (Mock) Card</h4>
+              </div>
+
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="p-3 flex flex-col gap-2.5 max-h-72 overflow-y-auto">
+                  {AI_MUSIC_CHAT_MOCK_MESSAGES.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`max-w-[88%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words ${msg.role === "user"
+                        ? "self-end rounded-br-md bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(244,63,94,0.3),0_0_18px_rgba(244,63,94,0.2)]"
+                        : "self-start rounded-bl-md border border-border bg-muted text-foreground"
+                        }`}
+                    >
+                      {msg.text}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-border p-3 flex items-center gap-2">
+                  <input
+                    type="text"
+                    disabled
+                    placeholder="Chat will be enabled after AI integration..."
+                    className="flex-1 bg-muted border border-border rounded-full px-3 py-2 text-sm text-muted-foreground cursor-not-allowed"
+                  />
+                  <button
+                    type="button"
+                    disabled
+                    className="w-9 h-9 rounded-full bg-muted border border-border text-muted-foreground flex items-center justify-center cursor-not-allowed opacity-70"
+                    aria-label="Send"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
 
       {/* Card Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
