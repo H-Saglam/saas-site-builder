@@ -4,6 +4,7 @@ import type { PackageType } from "@/lib/types";
 import { getUserPrimaryEmailById } from "@/lib/clerk-users";
 import { getAppBaseUrl, sendAdminSaleAlertEmail, sendPaymentSuccessEmail } from "@/lib/email";
 import crypto from "crypto";
+import { verifyShopierCheckoutToken } from "@/lib/shopier";
 
 const PACKAGE_PRICES_TRY: Record<PackageType, number> = {
   standard: 149,
@@ -59,6 +60,8 @@ export async function POST(request: NextRequest) {
     const totalOrderValue = params.get("total_order_value") || params.get("amount");
     const currency = params.get("currency") || "TRY";
     const siteId = params.get("custom_field_1"); // Site ID'miz
+    const callbackPackageType = params.get("custom_field_2");
+    const checkoutToken = params.get("custom_field_3");
 
     if (!orderId || !signature || !randomNr || !totalOrderValue) {
       console.error("Shopier callback zorunlu alanları eksik");
@@ -104,7 +107,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unsupported order amount" }, { status: 400 });
     }
 
-    const callbackPackageType = params.get("custom_field_2");
     if (callbackPackageType && callbackPackageType !== packageType) {
       console.warn("Ödeme tutarı ile custom_field_2 uyumsuz:", {
         callbackPackageType,
@@ -112,6 +114,11 @@ export async function POST(request: NextRequest) {
         totalOrderValue,
         siteId,
       });
+    }
+
+    if (!checkoutToken || !verifyShopierCheckoutToken(checkoutToken, { siteId, packageType, orderId }, apiSecret)) {
+      console.error("Geçersiz veya eksik Shopier checkout tokeni (custom_field_3)");
+      return NextResponse.json({ error: "Invalid checkout session" }, { status: 403 });
     }
 
     let expiresAt: string | null = null;
