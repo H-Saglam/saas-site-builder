@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
+import { verifyShopierCheckoutToken, isPackageType } from "@/lib/shopier";
 import type { PackageType } from "@/lib/types";
 import { getUserPrimaryEmailById } from "@/lib/clerk-users";
 import { getAppBaseUrl, sendAdminSaleAlertEmail, sendPaymentSuccessEmail } from "@/lib/email";
@@ -59,8 +60,10 @@ export async function POST(request: NextRequest) {
     const totalOrderValue = params.get("total_order_value") || params.get("amount");
     const currency = params.get("currency") || "TRY";
     const siteId = params.get("custom_field_1"); // Site ID'miz
+    const callbackPackageType = params.get("custom_field_2");
+    const checkoutToken = params.get("custom_field_3");
 
-    if (!orderId || !signature || !randomNr || !totalOrderValue) {
+    if (!orderId || !signature || !randomNr || !totalOrderValue || !siteId || !callbackPackageType || !checkoutToken) {
       console.error("Shopier callback zorunlu alanları eksik");
       return NextResponse.json({ error: "Invalid callback payload" }, { status: 400 });
     }
@@ -81,6 +84,16 @@ export async function POST(request: NextRequest) {
     if (!signaturesMatch(signature, expectedSignature)) {
       console.error("Geçersiz veya eksik Shopier imzası");
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+    }
+
+    if (!isPackageType(callbackPackageType)) {
+      console.error("Geçersiz paket tipi:", callbackPackageType);
+      return NextResponse.json({ error: "Invalid package type" }, { status: 400 });
+    }
+
+    if (!verifyShopierCheckoutToken(checkoutToken, { siteId, packageType: callbackPackageType, orderId }, apiSecret)) {
+      console.error("Ödeme onay jetonu doğrulanamadı", { siteId, orderId });
+      return NextResponse.json({ error: "Invalid checkout token" }, { status: 403 });
     }
 
     if (status !== "1" || !siteId) {
@@ -104,8 +117,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unsupported order amount" }, { status: 400 });
     }
 
-    const callbackPackageType = params.get("custom_field_2");
-    if (callbackPackageType && callbackPackageType !== packageType) {
+    if (callbackPackageType !== packageType) {
       console.warn("Ödeme tutarı ile custom_field_2 uyumsuz:", {
         callbackPackageType,
         resolvedPackageType: packageType,
