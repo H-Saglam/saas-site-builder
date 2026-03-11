@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import bcrypt from "bcryptjs";
 import { getServiceSupabase } from "@/lib/supabase";
 import { getEditDeadline, getTimeRemaining } from "@/lib/date-utils";
-import { siteFormSchema } from "@/lib/validators";
+import { siteFormSchema, siteUpdateSchema } from "@/lib/validators";
 
 // GET — Kullanıcının sitelerini getir (tek site veya tümü)
 export async function GET(request: NextRequest) {
@@ -137,19 +137,30 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { siteId: bodyId, id: altId } = body;
-    const siteId = bodyId || altId;
 
-    // Strict allowlist — prevent mass assignment of status, package_type, user_id, etc.
-    const ALLOWED_FIELDS = ["title", "recipientName", "slug", "templateId", "slides", "musicId", "isPrivate", "password", "confirmPassword"];
-    const updateData: Record<string, unknown> = {};
-    for (const key of ALLOWED_FIELDS) {
-      if (body[key] !== undefined) updateData[key] = body[key];
+    // Parse and validate the incoming update data to prevent mass assignment
+    const parsed = siteUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Geçersiz veri", details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+
+    const updateData = parsed.data as Record<string, unknown>;
+
+    // We get siteId from the unparsed raw body to ensure we don't drop it if validation changes
+    // or if the frontend sends it via `id` or `siteId` alongside the validated schema payload
+    const { siteId: bodyId, id: altId } = body;
+    const siteId = bodyId || altId || updateData.siteId || updateData.id;
 
     if (!siteId) {
       return NextResponse.json({ error: "Site ID gerekli" }, { status: 400 });
     }
+
+    // Explicitly delete ID fields from updateData to prevent modifying them in the database
+    delete updateData.siteId;
+    delete updateData.id;
 
     const supabase = getServiceSupabase();
 
