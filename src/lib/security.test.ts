@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { isSafeUrl } from "./security";
+import { isSafeUrl, safeCompare } from "./security";
 
 describe("isSafeUrl", () => {
   const ORIGINAL_ENV = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -38,5 +38,34 @@ describe("isSafeUrl", () => {
   it("should return false if Supabase URL is not configured", () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "";
     expect(isSafeUrl("https://example.supabase.co/test.jpg")).toBe(false);
+  });
+});
+
+describe("safeCompare", () => {
+  it("should return true for identical strings", () => {
+    expect(safeCompare("secret123", "secret123")).toBe(true);
+    expect(safeCompare("", "")).toBe(true);
+  });
+
+  it("should return false for different strings of same length", () => {
+    expect(safeCompare("secret123", "secret124")).toBe(false);
+    expect(safeCompare("a", "b")).toBe(false);
+  });
+
+  it("should return false for strings of different lengths", () => {
+    expect(safeCompare("secret123", "secret1234")).toBe(false);
+    expect(safeCompare("secret1234", "secret123")).toBe(false);
+    expect(safeCompare("", "a")).toBe(false);
+  });
+
+  it("should handle non-string inputs gracefully by returning false", () => {
+    // @ts-expect-error Testing invalid input types
+    expect(safeCompare(null, "secret123")).toBe(false);
+    // @ts-expect-error Testing invalid input types
+    expect(safeCompare("secret123", undefined)).toBe(false);
+    // @ts-expect-error Testing invalid input types
+    expect(safeCompare(123, 123)).toBe(false);
+    // @ts-expect-error Testing invalid input types
+    expect(safeCompare({}, {})).toBe(false);
   });
 });
