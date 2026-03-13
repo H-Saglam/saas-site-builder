@@ -17,6 +17,13 @@ const attempts = new Map<string, { count: number; resetAt: number }>();
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
+
+  // Lazy cleanup to avoid memory leak without setInterval
+  if (attempts.size > 1000) {
+    for (const [key, val] of attempts.entries()) {
+      if (now > val.resetAt) attempts.delete(key);
+    }
+  }
   const record = attempts.get(ip);
 
   if (!record || now > record.resetAt) {
@@ -33,8 +40,8 @@ function checkRateLimit(ip: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  // Rate limiting
-  const ip = request.headers.get("x-forwarded-for") || "unknown";
+  // Rate limiting - IP spoofing'i önlemek için request.ip öncelikli
+  const ip = request.ip || request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
   if (!checkRateLimit(ip)) {
     return NextResponse.json(
       { success: false, message: "Çok fazla deneme. 1 dakika bekleyin." },
