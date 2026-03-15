@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getServiceSupabase } from "@/lib/supabase";
+import { isCurrentUserAdmin } from "@/lib/admin-auth";
 
 type PackageType = "standard" | "premium";
 
@@ -84,9 +85,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, status: "active", packageType });
     }
 
-    // WARNING: This branch is dev-only. It must never execute in production.
-    // Dev modda draft → seçilen paketle doğrudan aktif et
-    if (process.env.NODE_ENV === "development" && site.status === "draft") {
+    // WARNING: Security Fix (Sentinel)
+    // Environment-based bypasses (NODE_ENV) are dangerous if deployed to a misconfigured production environment.
+    // Using identity-based authorization instead.
+    const isAdmin = await isCurrentUserAdmin();
+    if (isAdmin && site.status === "draft") {
       const packageType = requestedPackageType ?? resolvePackageType(site.package_type) ?? "standard";
       const expiresAt = buildExpiresAt(packageType);
       const activatedAt = new Date().toISOString();
