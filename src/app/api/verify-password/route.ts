@@ -14,9 +14,24 @@ function getVerifySecret() {
 
 // Basit in-memory rate limiting
 const attempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_ATTEMPTS_SIZE = 10000;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
+
+  // Lazy cleanup to prevent memory leaks (DoS risk)
+  if (attempts.size > MAX_ATTEMPTS_SIZE) {
+    for (const [key, value] of attempts.entries()) {
+      if (now > value.resetAt) {
+        attempts.delete(key);
+      }
+    }
+    // If it's still too large after cleanup (e.g., massive concurrent requests), clear it
+    if (attempts.size > MAX_ATTEMPTS_SIZE) {
+      attempts.clear();
+    }
+  }
+
   const record = attempts.get(ip);
 
   if (!record || now > record.resetAt) {
