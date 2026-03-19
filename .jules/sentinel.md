@@ -7,3 +7,8 @@
 **Vulnerability:** User-controlled URLs (e.g., `javascript:alert(1)`) injected into `src` attributes of downloaded HTML templates.
 **Learning:** `z.string().url()` allows dangerous schemes like `javascript:`. Downloaded/offline HTML files execute scripts in a sensitive local context.
 **Prevention:** Strictly validate URL schemes (allow only `http`/`https`) both at input validation (Zod) and output encoding (sanitize before interpolation).
+
+## 2024-05-25 - [Timing Attack in Authorization Check]
+**Vulnerability:** Direct string comparison (`===`) used for verifying the `Authorization` header against `CRON_SECRET` in `src/app/api/cron/retention-notifications/route.ts`.
+**Learning:** String comparison using `===` exits early on the first mismatch, allowing an attacker to guess the secret character by character by measuring response times.
+**Prevention:** Use a timing-safe comparison function (e.g., `safeCompare` utilizing `crypto.timingSafeEqual` over SHA-256 hashes) for all sensitive string matching, including API keys and webhook signatures.
