@@ -12,14 +12,23 @@ function getVerifySecret() {
   return new TextEncoder().encode(secret);
 }
 
-// Basit in-memory rate limiting
+// Basit in-memory rate limiting with max size limit to prevent OOM
 const attempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_ATTEMPTS_SIZE = 10000;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
+
+  // Clear the map entirely if it gets too large to prevent OOM attacks.
+  // This is a simple O(1) fallback compared to an LRU cache.
+  if (attempts.size >= MAX_ATTEMPTS_SIZE) {
+    attempts.clear();
+  }
+
   const record = attempts.get(ip);
 
   if (!record || now > record.resetAt) {
+    // Lazy cleanup of this specific IP if expired, though setting overwrites it anyway
     attempts.set(ip, { count: 1, resetAt: now + 60_000 }); // 1 dakika
     return true;
   }
