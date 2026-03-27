@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runRetentionNotificationsJob } from "@/lib/notifications/retention";
+import { safeCompare } from "@/lib/security-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +12,9 @@ function getCronSecret(): string | null {
 
 function isAuthorized(request: NextRequest, secret: string): boolean {
   const authorization = request.headers.get("authorization");
-  return authorization === `Bearer ${secret}`;
+  if (!authorization) return false;
+
+  return safeCompare(authorization, `Bearer ${secret}`);
 }
 
 async function handleRequest(request: NextRequest) {

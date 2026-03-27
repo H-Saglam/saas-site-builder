@@ -7,3 +7,8 @@
 **Vulnerability:** User-controlled URLs (e.g., `javascript:alert(1)`) injected into `src` attributes of downloaded HTML templates.
 **Learning:** `z.string().url()` allows dangerous schemes like `javascript:`. Downloaded/offline HTML files execute scripts in a sensitive local context.
 **Prevention:** Strictly validate URL schemes (allow only `http`/`https`) both at input validation (Zod) and output encoding (sanitize before interpolation).
+
+## 2024-05-25 - [Timing Attack in Authorization Headers]
+**Vulnerability:** Comparing sensitive secrets, such as authorization headers, using standard V8 string comparison (`===`) leaks secret characters via timing attacks because the comparison exits early on mismatched characters.
+**Learning:** `===` should never be used for comparing sensitive data like tokens or secrets. Attackers can statistically guess the secret by measuring the time the server takes to respond.
+**Prevention:** Always use `safeCompare` (which utilizes `crypto.timingSafeEqual`) for comparing sensitive strings. It hashes inputs with SHA-256 before using `crypto.timingSafeEqual` to prevent both early-exit and length-leakage timing attacks.
