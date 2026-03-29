@@ -26,7 +26,7 @@ describe("cn utility", () => {
   });
 
   test("ignores falsy values (null, undefined, boolean)", () => {
-    // @ts-ignore
+    // @ts-expect-error - testing falsy values
     expect(cn("foo", null, undefined, false, true, "")).toBe("foo");
   });
 
