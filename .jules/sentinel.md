@@ -7,3 +7,8 @@
 **Vulnerability:** User-controlled URLs (e.g., `javascript:alert(1)`) injected into `src` attributes of downloaded HTML templates.
 **Learning:** `z.string().url()` allows dangerous schemes like `javascript:`. Downloaded/offline HTML files execute scripts in a sensitive local context.
 **Prevention:** Strictly validate URL schemes (allow only `http`/`https`) both at input validation (Zod) and output encoding (sanitize before interpolation).
+
+## 2024-05-26 - [Timing Attack in Auth Headers]
+**Vulnerability:** Authentication headers like `CRON_SECRET` were compared using `===`, making them vulnerable to timing attacks.
+**Learning:** Node.js V8 string comparisons optimize aggressively by exiting early on mismatched characters, which leaks secret characters via timing attacks.
+**Prevention:** Always use `safeCompare` (which utilizes `crypto.timingSafeEqual`) for comparing sensitive secrets, such as authorization headers, to ensure constant-time comparison.
