@@ -13,6 +13,7 @@ mock.module("@/lib/supabase", () => ({
 // Mock next/server
 mock.module("next/server", () => ({
   NextResponse: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     json: (body: any, init?: any) => {
       return {
         json: () => Promise.resolve(body),
@@ -24,7 +25,8 @@ mock.module("next/server", () => ({
 }));
 
 describe("POST /api/upload", () => {
-  let consoleSpy: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let consoleSpy: import("bun:test").Mock<any>;
 
   beforeEach(() => {
     consoleSpy = spyOn(console, "error").mockImplementation(() => {});
@@ -41,6 +43,7 @@ describe("POST /api/upload", () => {
     // Create a mock request that throws when formData() is called
     const req = {
       formData: () => Promise.reject(new Error("Simulated FormData error")),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
 
     const res = await POST(req);
