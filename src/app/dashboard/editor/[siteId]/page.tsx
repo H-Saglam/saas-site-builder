@@ -112,7 +112,7 @@ export default function EditSitePage() {
 
   const [loading, setLoading] = useState(!isNewSite);
   const [saving, setSaving] = useState(false);
-  const [site, setSite] = useState<SiteData | null>(null);
+  const [, setSite] = useState<SiteData | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [hasEditLimit, setHasEditLimit] = useState(false);
   const [editExpired, setEditExpired] = useState(false);
