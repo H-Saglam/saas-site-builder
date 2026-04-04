@@ -112,7 +112,6 @@ export default function EditSitePage() {
 
   const [loading, setLoading] = useState(!isNewSite);
   const [saving, setSaving] = useState(false);
-  const [site, setSite] = useState<SiteData | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [hasEditLimit, setHasEditLimit] = useState(false);
   const [editExpired, setEditExpired] = useState(false);
@@ -166,7 +165,7 @@ export default function EditSitePage() {
         const data = await res.json();
         const raw = data.site;
         const s: SiteData = siteRowToData(raw);
-        setSite(s);
+        // setSite(s); removed because it was unused
         setSlug(s.slug);
         setTitle(s.title);
         setRecipientName(s.recipientName);

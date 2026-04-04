@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect } from "bun:test";
 import { getTimeAgo, getTimeRemaining } from "./date-utils";
 
@@ -75,7 +74,8 @@ describe("getTimeRemaining", () => {
 
   it("should return days and hours for < 30 days", () => {
     const now = new Date();
-    const date = new Date(now.getTime() + 2 * 86400000 + 5 * 3600000); // 2 days 5 hours later
+    // Add slightly more time (5h and 10s) to prevent sub-millisecond truncation issues during test execution
+    const date = new Date(now.getTime() + 2 * 86400000 + 5 * 3600000 + 10000);
     const result = getTimeRemaining(date.toISOString());
     expect(result.hasExpiration).toBe(true);
     expect(result.expired).toBe(false);
