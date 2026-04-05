@@ -4,6 +4,7 @@ import type { PackageType } from "@/lib/types";
 import { getUserPrimaryEmailById } from "@/lib/clerk-users";
 import { getAppBaseUrl, sendAdminSaleAlertEmail, sendPaymentSuccessEmail } from "@/lib/email";
 import crypto from "crypto";
+import { verifyShopierCheckoutToken } from "@/lib/shopier";
 
 const PACKAGE_PRICES_TRY: Record<PackageType, number> = {
   standard: 149,
@@ -59,6 +60,8 @@ export async function POST(request: NextRequest) {
     const totalOrderValue = params.get("total_order_value") || params.get("amount");
     const currency = params.get("currency") || "TRY";
     const siteId = params.get("custom_field_1"); // Site ID'miz
+    const callbackPackageType = params.get("custom_field_2");
+    const customField3 = params.get("custom_field_3");
 
     if (!orderId || !signature || !randomNr || !totalOrderValue) {
       console.error("Shopier callback zorunlu alanları eksik");
@@ -83,9 +86,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
     }
 
-    if (status !== "1" || !siteId) {
-      // Başarısız ödeme — bir şey yapma
+    if (status !== "1" || !siteId || !callbackPackageType || !customField3) {
+      // Başarısız ödeme veya eksik custom parametreleri
       return NextResponse.json({ received: true });
+    }
+
+    // Verify HMAC token for custom fields
+    if (!verifyShopierCheckoutToken(
+      customField3,
+      { siteId, packageType: callbackPackageType as PackageType, orderId },
+      apiSecret
+    )) {
+      console.error("Geçersiz checkout token (custom_field_3)");
+      return NextResponse.json({ error: "Invalid checkout token" }, { status: 403 });
     }
 
     // Ödeme başarılı — siteyi aktif et
@@ -104,8 +117,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unsupported order amount" }, { status: 400 });
     }
 
-    const callbackPackageType = params.get("custom_field_2");
-    if (callbackPackageType && callbackPackageType !== packageType) {
+    if (callbackPackageType !== packageType) {
       console.warn("Ödeme tutarı ile custom_field_2 uyumsuz:", {
         callbackPackageType,
         resolvedPackageType: packageType,
