@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { isSafeUrl } from "./security";
+import { describe, it, expect, beforeEach, afterEach, test } from "bun:test";
+import { isSafeUrl, safeCompare } from "./security";
 
 describe("isSafeUrl", () => {
   const ORIGINAL_ENV = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -38,5 +38,24 @@ describe("isSafeUrl", () => {
   it("should return false if Supabase URL is not configured", () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "";
     expect(isSafeUrl("https://example.supabase.co/test.jpg")).toBe(false);
+  });
+});
+
+describe("safeCompare", () => {
+  test("returns true for identical strings", () => {
+    expect(safeCompare("secret", "secret")).toBe(true);
+  });
+
+  test("returns false for different strings", () => {
+    expect(safeCompare("secret", "public")).toBe(false);
+  });
+
+  test("returns false for strings of different lengths", () => {
+    expect(safeCompare("sec", "secret")).toBe(false);
+  });
+
+  test("handles empty strings", () => {
+    expect(safeCompare("", "")).toBe(true);
+    expect(safeCompare("", "a")).toBe(false);
   });
 });
