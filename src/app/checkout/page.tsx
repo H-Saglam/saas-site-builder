@@ -88,12 +88,28 @@ function CheckoutContent() {
       return;
     }
 
-    const amount = packageType === "premium" ? "249" : "149";
-    const shopierUrl = `https://www.shopier.com/ShowProductNew/products.php?id=${shopierApiKey}&product_type=money_transfer&amount=${amount}&currency=TRY&custom_field_1=${siteId}&custom_field_2=${packageType}`;
-    window.open(shopierUrl, "_blank", "noopener,noreferrer");
+    try {
+      const res = await fetch("/api/shopier-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId, packageType }),
+      });
+      const data = await res.json();
 
-    setSelectedPackage(packageType);
-    setIsWaiting(true);
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Ödeme oturumu oluşturulamadı");
+      }
+
+      if (data?.url) {
+        window.open(data.url, "_blank", "noopener,noreferrer");
+        setSelectedPackage(packageType);
+        setIsWaiting(true);
+      } else {
+        throw new Error("Ödeme linki alınamadı");
+      }
+    } catch (error: unknown) {
+      alert((error as Error).message ?? "Bir hata oluştu");
+    }
   }
 
   if (isWaiting) {

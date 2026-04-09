@@ -4,6 +4,7 @@ import type { PackageType } from "@/lib/types";
 import { getUserPrimaryEmailById } from "@/lib/clerk-users";
 import { getAppBaseUrl, sendAdminSaleAlertEmail, sendPaymentSuccessEmail } from "@/lib/email";
 import crypto from "crypto";
+import { verifyShopierCheckoutToken } from "@/lib/shopier";
 
 const PACKAGE_PRICES_TRY: Record<PackageType, number> = {
   standard: 149,
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
     const totalOrderValue = params.get("total_order_value") || params.get("amount");
     const currency = params.get("currency") || "TRY";
     const siteId = params.get("custom_field_1"); // Site ID'miz
+    const checkoutToken = params.get("custom_field_3");
 
     if (!orderId || !signature || !randomNr || !totalOrderValue) {
       console.error("Shopier callback zorunlu alanları eksik");
@@ -112,6 +114,16 @@ export async function POST(request: NextRequest) {
         totalOrderValue,
         siteId,
       });
+    }
+
+    // 🛡️ SECURITY FIX: Validate checkout token to prevent parameter tampering
+    if (!checkoutToken || !verifyShopierCheckoutToken(
+      checkoutToken,
+      { siteId, packageType, orderId },
+      apiSecret
+    )) {
+      console.error("Geçersiz veya eksik Shopier ödeme jetonu (checkout token) - Parametre tahrifatı girişimi olabilir.");
+      return NextResponse.json({ error: "Invalid checkout token" }, { status: 403 });
     }
 
     let expiresAt: string | null = null;
