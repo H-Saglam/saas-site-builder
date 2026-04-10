@@ -1,5 +1,29 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { isSafeUrl } from "./security";
+import { isSafeUrl, safeCompare } from "./security";
+
+describe("safeCompare", () => {
+  it("should return true for identical strings", () => {
+    expect(safeCompare("secret-token-123", "secret-token-123")).toBe(true);
+    expect(safeCompare("", "")).toBe(true);
+  });
+
+  it("should return false for different strings of the same length", () => {
+    expect(safeCompare("secret-token-123", "secret-token-124")).toBe(false);
+    expect(safeCompare("a", "b")).toBe(false);
+  });
+
+  it("should return false for strings of different lengths", () => {
+    expect(safeCompare("secret-token-123", "secret-token-1234")).toBe(false);
+    expect(safeCompare("secret-token", "secret")).toBe(false);
+  });
+
+  it("should handle null or undefined gracefully", () => {
+    expect(safeCompare(null, null)).toBe(false);
+    expect(safeCompare(undefined, undefined)).toBe(false);
+    expect(safeCompare("string", null)).toBe(false);
+    expect(safeCompare(undefined, "string")).toBe(false);
+  });
+});
 
 describe("isSafeUrl", () => {
   const ORIGINAL_ENV = process.env.NEXT_PUBLIC_SUPABASE_URL;
