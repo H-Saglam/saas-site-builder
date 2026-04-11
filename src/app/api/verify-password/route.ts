@@ -17,6 +17,16 @@ const attempts = new Map<string, { count: number; resetAt: number }>();
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
+
+  // Prevent OOM DoS by sweeping expired entries if map gets too large
+  if (attempts.size > 10000) {
+    for (const [key, val] of attempts.entries()) {
+      if (now > val.resetAt) {
+        attempts.delete(key);
+      }
+    }
+  }
+
   const record = attempts.get(ip);
 
   if (!record || now > record.resetAt) {
