@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
+import { LRUCache } from "lru-cache";
 import { getServiceSupabase } from "@/lib/supabase";
 import { verifyPasswordSchema } from "@/lib/validators";
 
@@ -12,11 +13,15 @@ function getVerifySecret() {
   return new TextEncoder().encode(secret);
 }
 
-// Basit in-memory rate limiting
-const attempts = new Map<string, { count: number; resetAt: number }>();
+// Rate limiting with LRU Cache to prevent OOM DoS
+const attempts = new LRUCache<string, { count: number; resetAt: number }>({
+  max: 10000, // Maximum number of IPs to track
+  ttl: 60_000, // 1 minute default TTL
+});
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
+
   const record = attempts.get(ip);
 
   if (!record || now > record.resetAt) {
@@ -29,6 +34,8 @@ function checkRateLimit(ip: string): boolean {
   }
 
   record.count++;
+  // Update the cache with the new count
+  attempts.set(ip, record);
   return true;
 }
 
