@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import { getServiceSupabase } from "@/lib/supabase";
 import { verifyPasswordSchema } from "@/lib/validators";
+import { checkRateLimit } from "@/lib/security";
 
 function getVerifySecret() {
   const secret = process.env.VERIFY_SECRET;
@@ -12,30 +13,10 @@ function getVerifySecret() {
   return new TextEncoder().encode(secret);
 }
 
-// Basit in-memory rate limiting
-const attempts = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const record = attempts.get(ip);
-
-  if (!record || now > record.resetAt) {
-    attempts.set(ip, { count: 1, resetAt: now + 60_000 }); // 1 dakika
-    return true;
-  }
-
-  if (record.count >= 5) {
-    return false; // 5 deneme/dakika sınırı
-  }
-
-  record.count++;
-  return true;
-}
-
 export async function POST(request: NextRequest) {
   // Rate limiting
   const ip = request.headers.get("x-forwarded-for") || "unknown";
-  if (!checkRateLimit(ip)) {
+  if (!checkRateLimit(ip, 5, 60_000)) {
     return NextResponse.json(
       { success: false, message: "Çok fazla deneme. 1 dakika bekleyin." },
       { status: 429 }
