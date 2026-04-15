@@ -1,9 +1,4 @@
-## 2024-05-23 - [SSRF in File Download]
-**Vulnerability:** Unrestricted file download via `fetch` allowing SSRF. The code only checked for `https://` prefix.
-**Learning:** `startsWith("https://")` is insufficient protection against SSRF. Attackers can still access internal HTTPS services or use the server as a proxy to external sites. Redirects can also bypass initial checks.
-**Prevention:** Always validate the hostname against a strict allowlist of trusted domains (e.g., Supabase storage). Disable redirects in `fetch` using `{ redirect: "error" }` when possible.
-
-## 2024-05-24 - [Stored XSS in Offline Template]
-**Vulnerability:** User-controlled URLs (e.g., `javascript:alert(1)`) injected into `src` attributes of downloaded HTML templates.
-**Learning:** `z.string().url()` allows dangerous schemes like `javascript:`. Downloaded/offline HTML files execute scripts in a sensitive local context.
-**Prevention:** Strictly validate URL schemes (allow only `http`/`https`) both at input validation (Zod) and output encoding (sanitize before interpolation).
+## 2025-02-15 - Unbounded Memory Resource Allocation in In-Memory Rate Limiter
+**Vulnerability:** The in-memory rate limiter implemented directly inside `src/app/api/verify-password/route.ts` used an unbounded `Map` to track incoming IPs (`attempts`).
+**Learning:** This approach leaves the application vulnerable to Out-of-Memory (OOM) Denial of Service (DoS) attacks. An attacker can spoof millions of IP addresses to continuously add entries to the map, ultimately exhausting server memory and crashing the Node.js process. Additionally, defining such utilities per-route prevents centralized policy enforcement and duplicate code.
+**Prevention:** Always use bounded data structures for any server-side state like rate limiters or caches. We implemented an $O(1)$ eviction mechanism that deletes the oldest entry by utilizing `attempts.keys().next().value` when the `Map` size exceeds a predefined limit (`MAX_RATE_LIMIT_ENTRIES`). Furthermore, centralized this secure implementation in `src/lib/security.ts` to be universally consumed.
