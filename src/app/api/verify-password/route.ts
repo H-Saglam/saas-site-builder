@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import { getServiceSupabase } from "@/lib/supabase";
 import { verifyPasswordSchema } from "@/lib/validators";
+import { checkRateLimit } from "@/lib/security";
 
 function getVerifySecret() {
   const secret = process.env.VERIFY_SECRET;
@@ -10,26 +11,6 @@ function getVerifySecret() {
     throw new Error("VERIFY_SECRET env var is required and must be at least 32 characters");
   }
   return new TextEncoder().encode(secret);
-}
-
-// Basit in-memory rate limiting
-const attempts = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const record = attempts.get(ip);
-
-  if (!record || now > record.resetAt) {
-    attempts.set(ip, { count: 1, resetAt: now + 60_000 }); // 1 dakika
-    return true;
-  }
-
-  if (record.count >= 5) {
-    return false; // 5 deneme/dakika sınırı
-  }
-
-  record.count++;
-  return true;
 }
 
 export async function POST(request: NextRequest) {
