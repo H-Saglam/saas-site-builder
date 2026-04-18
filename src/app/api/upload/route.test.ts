@@ -13,7 +13,7 @@ mock.module("@/lib/supabase", () => ({
 // Mock next/server
 mock.module("next/server", () => ({
   NextResponse: {
-    json: (body: any, init?: any) => {
+    json: (body: Record<string, unknown>, init?: Record<string, unknown>) => {
       return {
         json: () => Promise.resolve(body),
         status: init?.status || 200,
@@ -24,7 +24,7 @@ mock.module("next/server", () => ({
 }));
 
 describe("POST /api/upload", () => {
-  let consoleSpy: any;
+  let consoleSpy: Record<string, unknown>;
 
   beforeEach(() => {
     consoleSpy = spyOn(console, "error").mockImplementation(() => {});
@@ -41,7 +41,7 @@ describe("POST /api/upload", () => {
     // Create a mock request that throws when formData() is called
     const req = {
       formData: () => Promise.reject(new Error("Simulated FormData error")),
-    } as any;
+    } as unknown as NextRequest;
 
     const res = await POST(req);
 
