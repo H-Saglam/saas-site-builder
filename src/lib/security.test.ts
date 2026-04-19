@@ -40,3 +40,35 @@ describe("isSafeUrl", () => {
     expect(isSafeUrl("https://example.supabase.co/test.jpg")).toBe(false);
   });
 });
+
+import { safeCompare } from "./security";
+
+describe("safeCompare", () => {
+  it("should return true for identical strings", () => {
+    expect(safeCompare("secret", "secret")).toBe(true);
+  });
+
+  it("should return false for different strings of same length", () => {
+    expect(safeCompare("secret", "secres")).toBe(false);
+  });
+
+  it("should return false for different strings of different length", () => {
+    expect(safeCompare("secret", "secret123")).toBe(false);
+  });
+
+  it("should return false when first argument is null", () => {
+    expect(safeCompare(null as any, "secret")).toBe(false);
+  });
+
+  it("should return false when second argument is null", () => {
+    expect(safeCompare("secret", null as any)).toBe(false);
+  });
+
+  it("should return false when both arguments are null", () => {
+    expect(safeCompare(null as any, null as any)).toBe(false);
+  });
+
+  it("should return false when first argument is undefined", () => {
+    expect(safeCompare(undefined as any, "secret")).toBe(false);
+  });
+});
