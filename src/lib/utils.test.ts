@@ -26,7 +26,8 @@ describe("cn utility", () => {
   });
 
   test("ignores falsy values (null, undefined, boolean)", () => {
-    // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     expect(cn("foo", null, undefined, false, true, "")).toBe("foo");
   });
 

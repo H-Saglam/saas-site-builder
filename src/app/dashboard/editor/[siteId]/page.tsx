@@ -112,6 +112,7 @@ export default function EditSitePage() {
 
   const [loading, setLoading] = useState(!isNewSite);
   const [saving, setSaving] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [site, setSite] = useState<SiteData | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [hasEditLimit, setHasEditLimit] = useState(false);

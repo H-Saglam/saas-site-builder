@@ -3,7 +3,6 @@ import { getAuth } from "@clerk/nextjs/server";
 import { getServiceSupabase } from "@/lib/supabase";
 import { isSafeUrl } from "@/lib/security";
 import JSZip from "jszip";
-import type { SiteData } from "@/lib/types";
 import { siteRowToData } from "@/lib/mappers";
 import fs from "fs";
 import path from "path";
