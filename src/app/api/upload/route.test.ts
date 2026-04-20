@@ -13,7 +13,7 @@ mock.module("@/lib/supabase", () => ({
 // Mock next/server
 mock.module("next/server", () => ({
   NextResponse: {
-    json: (body: any, init?: any) => {
+    json: (body: unknown, init?: { status?: number }) => {
       return {
         json: () => Promise.resolve(body),
         status: init?.status || 200,
@@ -24,6 +24,7 @@ mock.module("next/server", () => ({
 }));
 
 describe("POST /api/upload", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let consoleSpy: any;
 
   beforeEach(() => {
@@ -41,7 +42,7 @@ describe("POST /api/upload", () => {
     // Create a mock request that throws when formData() is called
     const req = {
       formData: () => Promise.reject(new Error("Simulated FormData error")),
-    } as any;
+    } as unknown as Request;
 
     const res = await POST(req);
 
