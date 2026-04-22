@@ -4,6 +4,7 @@ import type { PackageType } from "@/lib/types";
 import { getUserPrimaryEmailById } from "@/lib/clerk-users";
 import { getAppBaseUrl, sendAdminSaleAlertEmail, sendPaymentSuccessEmail } from "@/lib/email";
 import crypto from "crypto";
+import { verifyShopierCheckoutToken } from "@/lib/shopier";
 
 const PACKAGE_PRICES_TRY: Record<PackageType, number> = {
   standard: 149,
@@ -112,6 +113,28 @@ export async function POST(request: NextRequest) {
         totalOrderValue,
         siteId,
       });
+    }
+
+    // Checkout token validation to prevent parameter tampering
+    const checkoutToken = params.get("custom_field_3");
+    if (!checkoutToken) {
+      console.error("Shopier callback checkout token eksik");
+      return NextResponse.json({ error: "Missing checkout token" }, { status: 403 });
+    }
+
+    const isTokenValid = verifyShopierCheckoutToken(
+      checkoutToken,
+      {
+        siteId,
+        packageType,
+        orderId,
+      },
+      apiSecret
+    );
+
+    if (!isTokenValid) {
+      console.error("Geçersiz checkout token (parametre manipülasyonu şüphesi):", { siteId, packageType, orderId });
+      return NextResponse.json({ error: "Invalid checkout token" }, { status: 403 });
     }
 
     let expiresAt: string | null = null;
