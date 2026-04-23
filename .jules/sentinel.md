@@ -1,9 +1,4 @@
-## 2024-05-23 - [SSRF in File Download]
-**Vulnerability:** Unrestricted file download via `fetch` allowing SSRF. The code only checked for `https://` prefix.
-**Learning:** `startsWith("https://")` is insufficient protection against SSRF. Attackers can still access internal HTTPS services or use the server as a proxy to external sites. Redirects can also bypass initial checks.
-**Prevention:** Always validate the hostname against a strict allowlist of trusted domains (e.g., Supabase storage). Disable redirects in `fetch` using `{ redirect: "error" }` when possible.
-
-## 2024-05-24 - [Stored XSS in Offline Template]
-**Vulnerability:** User-controlled URLs (e.g., `javascript:alert(1)`) injected into `src` attributes of downloaded HTML templates.
-**Learning:** `z.string().url()` allows dangerous schemes like `javascript:`. Downloaded/offline HTML files execute scripts in a sensitive local context.
-**Prevention:** Strictly validate URL schemes (allow only `http`/`https`) both at input validation (Zod) and output encoding (sanitize before interpolation).
+## 2024-05-24 - Timing Attack Vulnerability in CRON Endpoint
+**Vulnerability:** The CRON endpoint (`src/app/api/cron/retention-notifications/route.ts`) was using standard string comparison (`===`) to verify the `Authorization` header against `CRON_SECRET`. Standard string comparisons exit early on mismatched characters, leaking secret length and content via timing attacks.
+**Learning:** In Node.js V8, string comparison (`===`) is optimized to exit early. While `crypto.timingSafeEqual` exists, it natively throws if string lengths differ, leaking length information. Thus, securely comparing strings of varying or unknown lengths requires hashing both strings before comparison.
+**Prevention:** Use the `safeCompare` utility in `src/lib/security.ts` which employs `crypto.createHash('sha256')` prior to `crypto.timingSafeEqual` for all sensitive secret comparisons (e.g., authorization headers) instead of `===`.
