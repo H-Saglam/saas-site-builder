@@ -1,3 +1,25 @@
+import crypto from "crypto";
+
+/**
+ * Compares two strings in constant time to prevent timing attacks.
+ * Uses SHA-256 to hash the inputs first to allow comparison of
+ * strings with different lengths without leaking length information.
+ *
+ * @param a The first string
+ * @param b The second string
+ * @returns true if the strings are exactly equal, false otherwise
+ */
+export function safeCompare(a: string, b: string): boolean {
+  if (typeof a !== "string" || typeof b !== "string") {
+    return false;
+  }
+
+  const hashA = crypto.createHash("sha256").update(a).digest();
+  const hashB = crypto.createHash("sha256").update(b).digest();
+
+  return crypto.timingSafeEqual(hashA, hashB);
+}
+
 /**
  * Validates if a URL is safe to fetch (e.g. from allowed domains).
  * Currently only allows URLs from the configured Supabase project.
