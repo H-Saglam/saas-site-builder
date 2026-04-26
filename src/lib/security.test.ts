@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { isSafeUrl } from "./security";
+import { isSafeUrl, safeCompare } from "./security";
 
 describe("isSafeUrl", () => {
   const ORIGINAL_ENV = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -38,5 +38,31 @@ describe("isSafeUrl", () => {
   it("should return false if Supabase URL is not configured", () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "";
     expect(isSafeUrl("https://example.supabase.co/test.jpg")).toBe(false);
+  });
+});
+
+describe("safeCompare", () => {
+  it("should return true for identical strings", () => {
+    expect(safeCompare("secret", "secret")).toBe(true);
+    expect(safeCompare("a very long and complex string 123!@#", "a very long and complex string 123!@#")).toBe(true);
+  });
+
+  it("should return false for different strings of same length", () => {
+    expect(safeCompare("secret", "secreT")).toBe(false);
+    expect(safeCompare("123456", "654321")).toBe(false);
+  });
+
+  it("should return false for different strings of different length", () => {
+    expect(safeCompare("secret", "secret123")).toBe(false);
+    expect(safeCompare("short", "much longer string")).toBe(false);
+  });
+
+  it("should return true for empty strings", () => {
+    expect(safeCompare("", "")).toBe(true);
+  });
+
+  it("should return false when comparing empty string with non-empty string", () => {
+    expect(safeCompare("", "secret")).toBe(false);
+    expect(safeCompare("secret", "")).toBe(false);
   });
 });
