@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 /**
  * Validates if a URL is safe to fetch (e.g. from allowed domains).
  * Currently only allows URLs from the configured Supabase project.
@@ -17,4 +19,23 @@ export function isSafeUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Securely compares two strings in constant time to prevent timing attacks.
+ * By pre-hashing the strings, it also avoids leaking the length of the expected string.
+ *
+ * @param a The first string
+ * @param b The second string
+ * @returns true if the strings are strictly equal, false otherwise
+ */
+export function safeCompare(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') {
+    return false;
+  }
+
+  const hashA = crypto.createHash("sha256").update(a).digest();
+  const hashB = crypto.createHash("sha256").update(b).digest();
+
+  return crypto.timingSafeEqual(hashA, hashB);
 }
